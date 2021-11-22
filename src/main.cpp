@@ -15,29 +15,31 @@
 #define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
 #define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
 /*
-#                                      /--LED13----------------------
-#                                     /   S5RS5G
-#                                   LED12
-#                                   / 
-#                              TW6 /---LED14-------------------------
-#                                 /    S4GS4G
-#                               LED11
-#        TW1           TW2      /
-#--LED1---\----LED2----/-LED3--/----LED15----------------------------
-#          \          /       TW5  S3RS3G
-#           LED4     LED5
-#            \      /     TW3
-#--LED6-------\LED7/---LED8\--------LED16----------------------------
-#        S1GS1R             \
-#                           LED9
-#                             \            TW7
-#--LED10-----------------------\----LED17---\-----LED18--------------
-#                       S2GS2R TW4           \
-#                                           LED19
-#                                              \     S6RS6G
-#                                            TW8\----LED20------------
-#                                                \   S7RS7G
-#                                                 \--LED21------------
+//                                      /--LED13----------------------LED22---\
+//                                     /   S5RS5G                              \
+//                                   LED12                                     LED23
+//                                   /                                           \
+//                              TW6 /---LED14--------------------------LED24------\
+//                                 /    S4GS4G                                     \
+//                               LED11                                              LED25
+//        TW1           TW2      /                                                   \ 
+//--LED1---\----LED2----/-LED3--/----LED15-----------------------------LED26---------------LEDXX----/-----LEDXX----------
+//          \          /       TW5  S3RS3G                                                         /
+//           LED4     LED5                                                                        LEDXX
+//            \      /     TW3                                                                   / 
+//--LED6-------\LED7/---LED8\--------LED16--------------------------------LEDXX----------/------/--------------LEDXX------
+//        S1GS1R             \                                                          /
+//                           LED9                                                      LEDXX
+//                             \            TW7                                       /
+//--LED10-----------------------\----LED17---\-----LED18--------------LEDXX----------/--LEDXXX----------
+//                       S2GS2R TW4           \                                     /         /--LEDXXX-----
+//                                           LED19                                LEDXX      /
+//                                              \     S6RS6G                      /         /----LEDXXX-----
+//                                            TW8\----LED20------------LEDXX-----/         /
+//                                                \   S7RS7G                    /         /
+//                                                 \--LED21------------LEDXX---/-LEDXX---/----LEDXXX--------
+//
+
 */
 //MCP 0 GPIOA 0 -7 -> LED1 - LED7
 #define LED1 0 // MCP 0 GPIOA0
@@ -65,11 +67,11 @@
 #define LED19 2 // MCP 1 GPIOA2
 #define LED20 3 // MCP 1 GPIOA3
 #define LED21 4 // MCP 1 GPIOA4
-
 // MCP 1 GPIOA 5 -7 -> Signale 1 - 2
 #define SIGNALROT1 5   // Signal 1 Rot   MCP 1 GPIOA5
 #define SIGNALGRUEN1 6 // Signal 1 Gruen MCP 1 GPIOA6
 #define SIGNALROT2 7   // Signal 2 Rot   MCP 1 GPIOA7
+
 // MCP 1 GPIOB 0 - 7 -> Signale 2 - 7
 #define SIGNALGRUEN2 8  // Signal 2 Gruen MCP 1 GPIOB0
 #define SIGNALROT3 9    // Signal 3 Rot   MCP 1 GPIOB1
@@ -79,10 +81,49 @@
 #define SIGNALROT5 13   // Signal 5 Rot   MCP 1 GPIOB5
 #define SIGNALGRUEN5 14 // Signal 5 Gruen MCP 1 GPIOB6
 #define SIGNALROT6 15   // Signal 6 Rot   MCP 1 GPIOB7
+
 // MCP 2 GPIOA 0 - 2 -> Signal 6 - 7
 #define SIGNALGRUEN6 0 // Signal 6 Gruen MCP 2 GPIOA0
 #define SIGNALROT7 1   // Signal 7 Rot   MCP 2 GPIOA1
 #define SIGNALGRUEN7 2 // Signal 7 Gruen MCP 2 GPIOA2
+
+//MCP 2 GPIOA 3-7 -> LED 22 - 25
+#define LED21 3 // MCP 2 GPIOA3
+#define LED22 4 // MCP 2 GPIOA4
+#define LED23 5 // MCP 2 GPIOA5
+#define LED24 6 // MCP 2 GPIOA6
+#define LED25 7 // MCP 2 GPIOA7
+//MCP 2 GPIOB 0 - 7 -> LED 25 - LED XX
+#define LED26 8 // MCP 2 GPIOB0
+#define LED28 9 // MCP 2 GPIOB1
+#define LED29 10 // MCP 2 GPIOB2
+#define LED30 11 // MCP 2 GPIOB3
+#define LED31 12 // MCP 2 GPIOB4
+#define LED32 13 // MCP 2 GPIOB5
+#define LED33 14 // MCP 2 GPIOB6
+#define LED34 15 // MCP 2 GPIOB7
+
+#define SIGNALROT8 0   // Signal 8 Rot   MCP 3 GPIOA0
+#define SIGNALGRUEN8 1 // Signal 8 Gruen MCP 3 GPIOA1
+#define SIGNALROT9 2   // Signal 9 Rot   MCP 3 GPIOA2
+#define SIGNALGRUEN9 3 // Signal 9 Gruen MCP 3 GPIOA3
+#define SIGNALROT10 4   // Signal 10 Rot   MCP 3 GPIOA4
+#define SIGNALGRUEN10 5 // Signal 10 Gruen MCP 3 GPIOA5
+#define SIGNALROT11 6   // Signal 11 Rot   MCP 3 GPIOA6
+#define SIGNALGRUEN11 7 // Signal 11 Gruen MCP 3 GPIOA7
+#define SIGNALROT12 8 // Signal 12 Rot   MCP 3 GPIOB0
+#define SIGNALGRUEN12 9 // Signal 12 Gruen MCP 3 GPIOB1
+#define SIGNALROT13 10   // Signal 13 Rot   MCP 3 GPIOB2
+#define SIGNALGRUEN13 11 // Signal 13 Gruen MCP 3 GPIOB3
+#define SIGNALROT14 12   // Signal 14 Rot   MCP 3 GPIOB4
+#define SIGNALGRUEN14 13 // Signal 14 Gruen MCP 3 GPIOB5
+#define SIGNALROT15 14   // Signal 15 Rot   MCP 3 GPIOB6
+#define SIGNALGRUEN15 15 // Signal 15 Gruen MCP 3 GPIOB7
+#define SIGNALROT16 0   // Signal 16 Rot   MCP 4 GPIOA0
+#define SIGNALGRUEN16 0 // Signal 16 Gruen MCP 4 GPIOA1
+
+//Taster
+//MCP 4
 
 Adafruit_MCP23X17 mcp[MAXLEDMCP];
 
@@ -108,6 +149,13 @@ void setup()
     mcp[1].pinMode(gpio, OUTPUT);
     mcp[2].pinMode(gpio, OUTPUT);
     mcp[3].pinMode(gpio, OUTPUT);
+  }
+    for (int gpio = 0; gpio < MAXGPIO; gpio++)
+  {
+    mcp[4].pinMode(gpio, INPUT_PULLUP);
+    mcp[5].pinMode(gpio, INPUT_PULLUP);
+    mcp[6].pinMode(gpio, INPUT_PULLUP);
+    mcp[7].pinMode(gpio, INPUT_PULLUP);
   }
   // Alle LEDs Aus
   mcp[0].writeGPIOAB(LOW);
