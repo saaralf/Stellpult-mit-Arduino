@@ -45,7 +45,7 @@ Stellpult::Stellpult()
   WEICHE14 = false; // False gerade, true abzweig
 }
 
-void mcpauswerten()
+void Stellpult::mcpauswerten()
 {
   // Weiche 1 und Weiche 2
   if (!WEICHE1 && !WEICHE2) // Weiche 1 Gerade und Weiche 2 gerade

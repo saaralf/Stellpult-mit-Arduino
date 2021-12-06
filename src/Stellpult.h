@@ -1,9 +1,8 @@
 #include <Arduino.h>
+#include <MCP.h>
 
 #ifndef __StellPult__
 #define __StellPult__
-
-
 
 #define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
 #define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
@@ -151,11 +150,31 @@
 #define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
 
+#define MAXLEDMCP 2
 
+class Stellpult
+{
 
+public:
+    Stellpult();
+    MCP mcp[MAXLEDMCP];
+    void mcpauswerten();
+    bool WEICHE1;  // False gerade, true abzweig
+    bool WEICHE2;  // False gerade, true abzweig
+    bool WEICHE3;  // False gerade, true abzweig
+    bool WEICHE4;  // False gerade, true abzweig
+    bool WEICHE5;  // False gerade, true abzweig
+    bool WEICHE6;  // False gerade, true abzweig
+    bool WEICHE7;  // False gerade, true abzweig
+    bool WEICHE8;  // False gerade, true abzweig
+    bool WEICHE9;  // False gerade, true abzweig
+    bool WEICHE10; // False gerade, true abzweig
+    bool WEICHE11; // False gerade, true abzweig
+    bool WEICHE12; // False gerade, true abzweig
+    bool WEICHE13; // False gerade, true abzweig
+    bool WEICHE14; // False gerade, true abzweig
 
-
-
-
+private:
+};
 
 #endif
