@@ -1,3 +1,5 @@
+#include <Adafruit_MCP23X17.h>
+#include <Arduino.h>
 
 #ifndef __StellPult__
 #define __StellPult__
@@ -157,5 +159,34 @@
 #define SIGNALGRUEN15 15 // Signal 15 Gruen MCP 3 GPIOB7
 #define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
+
+
+class Stellpult {
+
+private:
+
+    Adafruit_MCP23X17 mcp[MAXLEDMCP];
+
+
+public:
+bool begin ();
+bool WEICHE1 ;  // False gerade, true abzweig
+bool WEICHE2 ;  // False gerade, true abzweig
+bool WEICHE3 ;  // False gerade, true abzweig
+bool WEICHE4 ;  // False gerade, true abzweig
+bool WEICHE5 ;  // False gerade, true abzweig
+bool WEICHE6 ;  // False gerade, true abzweig
+bool WEICHE7 ;  // False gerade, true abzweig
+bool WEICHE8 ;  // False gerade, true abzweig
+bool WEICHE9 ;  // False gerade, true abzweig
+bool WEICHE10 ; // False gerade, true abzweig
+bool WEICHE11 ; // False gerade, true abzweig
+bool WEICHE12 ; // False gerade, true abzweig
+bool WEICHE13 ; // False gerade, true abzweig
+bool WEICHE14 ; // False gerade, true abzweig
+void mcpauswerten();
+
+};
+
 
 #endif
