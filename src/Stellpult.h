@@ -1,22 +1,13 @@
-#include <Adafruit_MCP23X17.h>
 #include <Arduino.h>
 
 #ifndef __StellPult__
 #define __StellPult__
 
-#define MAXLEDMCP 2
-#define MAXGPIO 16
-#define MCP1ADDR 0x20
-#define MCP2ADDR 0x21
-#define MCP3ADDR 0x22
-#define MCP4ADDR 0x23
-#define MCP5ADDR 0x24
-#define MCP6ADDR 0x25
-#define MCP7ADDR 0x26
-#define MCP8ADDR 0x27
+
 
 #define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
 #define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
+
 /*
 //                                      /--LED19----------------------LED22---\
 //                                     /   S5RS5G                              \
@@ -161,32 +152,10 @@
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
 
 
-class Stellpult {
-
-private:
-
-    Adafruit_MCP23X17 mcp[MAXLEDMCP];
 
 
-public:
-bool begin ();
-bool WEICHE1 ;  // False gerade, true abzweig
-bool WEICHE2 ;  // False gerade, true abzweig
-bool WEICHE3 ;  // False gerade, true abzweig
-bool WEICHE4 ;  // False gerade, true abzweig
-bool WEICHE5 ;  // False gerade, true abzweig
-bool WEICHE6 ;  // False gerade, true abzweig
-bool WEICHE7 ;  // False gerade, true abzweig
-bool WEICHE8 ;  // False gerade, true abzweig
-bool WEICHE9 ;  // False gerade, true abzweig
-bool WEICHE10 ; // False gerade, true abzweig
-bool WEICHE11 ; // False gerade, true abzweig
-bool WEICHE12 ; // False gerade, true abzweig
-bool WEICHE13 ; // False gerade, true abzweig
-bool WEICHE14 ; // False gerade, true abzweig
-void mcpauswerten();
 
-};
+
 
 
 #endif

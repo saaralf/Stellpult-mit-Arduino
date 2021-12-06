@@ -10,16 +10,13 @@
 
 
 
-
 void setup()
 {
   Serial.begin(9600);
  
+Stellpult stellpult = (new Stellpult);
 
-if (!Stellpult().begin()){
-  Serial.println ("Error beim MCP definieren in Stellpult");
 
-}
   // configure pin for output
   // mcp.pinMode(LED_PIN, OUTPUT);
 
@@ -32,17 +29,18 @@ if (!Stellpult().begin()){
 void loop()
 {
   Serial.println("Auswerten");
+   stellpult.mcp[0].digitalWrite(LED2, HIGH);
 
 
 
   delay(550);
-  Stellpult().WEICHE1 = (bool)false;
-   Stellpult().WEICHE2 = false;
-   Stellpult().WEICHE3 = false;
-   Stellpult().WEICHE4 = false;
-   Stellpult().WEICHE5 = true;
-   Stellpult().WEICHE6 = false;
-   Stellpult().WEICHE7 = false;
+  stellpult.WEICHE1 = false;
+   stellpult.WEICHE2 = false;
+   stellpult.WEICHE3 = false;
+   stellpult.WEICHE4 = false;
+   stellpult.WEICHE5 = true;
+   stellpult.WEICHE6 = false;
+   stellpult.WEICHE7 = false;
 
   Stellpult().mcpauswerten();
 
