@@ -3,6 +3,7 @@
 #include <Ethernet.h>
 #include <PubSubClient.h>
 #include <SPI.h>
+#include <SX30.h>    // Pin2=T0=INT0, Pin4=T1, Pin6=SX-Write  // V03.00
 
 // Update these with values suitable for your network.
 byte mac[] = {0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0xED};
