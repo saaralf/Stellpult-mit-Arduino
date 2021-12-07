@@ -1,0 +1,32 @@
+{
+  "C_Cpp_Runner.cCompilerPath": "/home/michael/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
+  "C_Cpp_Runner.debuggerPath": "/bin/gdb",
+  "C_Cpp_Runner.warnings": [
+    "-Wall",
+    "-Wextra",
+    "-Wpedantic"
+  ],
+  "C_Cpp_Runner.compilerArgs": [],
+  "C_Cpp_Runner.includePaths": [
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/include",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/Ethernet/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/PubSubClient/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/Adafruit MCP23017 Arduino Library/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/Adafruit BusIO",
+    "/home/michael/.platformio/packages/framework-arduino-avr/libraries/SPI/src",
+    "/home/michael/.platformio/packages/framework-arduino-avr/libraries/Wire/src",
+    "/home/michael/.platformio/packages/framework-arduino-avr/cores/arduino",
+    "/home/michael/.platformio/packages/framework-arduino-avr/variants/mega",
+    "/home/michael/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
+    "/home/michael/.platformio/packages/framework-arduino-avr/libraries/HID/src",
+    "/home/michael/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+    ""
+  ],
+  "C_Cpp_Runner.linkerArgs": [],
+  "C_Cpp_Runner.cStandard": "c11",
+  "C_Cpp_Runner.cppStandard": "c++11",
+  "C_Cpp_Runner.excludeSearch": [],
+  "C_Cpp_Runner.enableWarnings": true,
+  "C_Cpp_Runner.warningsAsError": false
+}

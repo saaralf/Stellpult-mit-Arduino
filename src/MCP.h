@@ -1,8 +1,10 @@
 #include <Adafruit_MCP23X17.h>
 
 
+
 #ifndef __CLASSMCP__
 #define __CLASSMCP__
+#define MAXLEDMCP 2
 
 #define MAXGPIO 16
 #define MCP1ADDR 0x20
@@ -16,15 +18,16 @@
 class MCP : public Adafruit_MCP23X17
 {
 public:
-    MCP(); // constructor
+    MCP( const int maxmcps); // constructor
+    ~MCP();
 
-    void setPinMode(const unsigned int GPIO, const unsigned int richtung);
-    void setPinMode(const unsigned int GPIO, const unsigned int richtung, const bool PULLUP);
+    //void setPinMode(const unsigned int GPIO, const unsigned int richtung);
+    //void setPinMode(const unsigned int GPIO, const unsigned int richtung, const bool PULLUP);
     Adafruit_MCP23X17 getMCP(int index);
     bool initMCP(const unsigned int  MCPADR);
 
 private:
-    Adafruit_MCP23X17 mcp;
+    Adafruit_MCP23X17 mcp23017;
 
 protected:
 };
