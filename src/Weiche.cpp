@@ -3,7 +3,7 @@
 Weiche::Weiche()
 {
     setRichtung(false);
-    setName("Weiche ohne Namen");
+    
 }
 
 Weiche::Weiche(const int Name, const bool richtung){
