@@ -3,7 +3,7 @@
 #include <Arduino.h>
 //#include <Stellpult.h>
 #include <MCP.h>
-
+#include <Weiche.h>
 #define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
 #define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
 
@@ -150,64 +150,64 @@
 #define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
 #define MAXGPIO 16
-#define MCP1ADDR 0x20
-#define MCP2ADDR 0x21
-#define MCP3ADDR 0x22
-#define MCP4ADDR 0x23
-#define MCP5ADDR 0x24
-#define MCP6ADDR 0x25
-#define MCP7ADDR 0x26
-#define MCP8ADDR 0x27
+
+#define NUMBERWEICHEN 17
 #define MAXLEDMCP 2
- bool WEICHE1;  // False gerade, true abzweig
-    bool WEICHE2;  // False gerade, true abzweig
-    bool WEICHE3;  // False gerade, true abzweig
-    bool WEICHE4;  // False gerade, true abzweig
-    bool WEICHE5;  // False gerade, true abzweig
-    bool WEICHE6;  // False gerade, true abzweig
-    bool WEICHE7;  // False gerade, true abzweig
-    bool WEICHE8;  // False gerade, true abzweig
-    bool WEICHE9;  // False gerade, true abzweig
-    bool WEICHE10; // False gerade, true abzweig
-    bool WEICHE11; // False gerade, true abzweig
-    bool WEICHE12; // False gerade, true abzweig
-    bool WEICHE13; // False gerade, true abzweig
-    bool WEICHE14; // False gerade, true abzweig
+#define MAXTASTERMCP 3
+
 void mcpauswerten();
-    MCP *mcp ;
+MCP *mcp[MAXLEDMCP];
+//Adafruit_MCP23X17 mcpLED[MAXLEDMCP];
+//Adafruit_MCP23X17 mcpTaster[MAXTASTERMCP];
+
+Weiche weiche[NUMBERWEICHEN];
 
 //Stellpult *stellpult = new Stellpult();
 void setup()
 {
   Serial.begin(9600);
 
- mcp = new MCP ( MAXLEDMCP);
+  Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
 
-  for (int gpio = 0; gpio < MAXGPIO; gpio++)
+  for (int i; i <= NUMBERWEICHEN; i++)
   {
-    Serial.print("Setze PinMode für PIN ");
-    Serial.println(gpio);
-    mcp->pinMode(gpio  , OUTPUT);
-    
-    //   mcp[2].pinMode(gpio, OUTPUT);
-    //   mcp[3].pinMode(gpio, OUTPUT);
-    
+    weiche[i] =  Weiche("Weiche" + i, false);
   }
 
-  WEICHE1 = false;  // False gerade, true abzweig
-  WEICHE2 = false;  // False gerade, true abzweig
-  WEICHE3 = false;  // False gerade, true abzweig
-  WEICHE4 = false;  // False gerade, true abzweig
-  WEICHE5 = false;  // False gerade, true abzweig
-  WEICHE6 = false;  // False gerade, true abzweig
-  WEICHE7 = false;  // False gerade, true abzweig
-  WEICHE8 = false;  // False gerade, true abzweig
-  WEICHE9 = false;  // False gerade, true abzweig
-  WEICHE10 = false; // False gerade, true abzweig
-  WEICHE11 = false; // False gerade, true abzweig
-  WEICHE12 = false; // False gerade, true abzweig
-  WEICHE13 = false; // False gerade, true abzweig
-  WEICHE14 = false; // False gerade, true abzweig
+  Serial.print("Erzeuge MCPs: ");
+  //Serial.println(0x20 + mcps, HEX);
+  mcp[0] = new MCP("MCP 1", 0x20); // LEDs und Signale
+  mcp[1] = new MCP("MCP 2", 0x21); // LEDs und Signale
+  mcp[2] = new MCP("MCP 3", 0x22); // LEDs und Signale
+  mcp[3] = new MCP("MCP 4", 0x23); // LEDs und Signale
+  mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
+  mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
+  mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
+                                   //mcp[7] = new MCP ("MCP 1",0x27);
+
+  for (int i = 0; i < MAXGPIO; i++)
+  {
+    mcp[0]->pinMode(i, OUTPUT);
+    mcp[1]->pinMode(i, OUTPUT);
+    mcp[2]->pinMode(i, OUTPUT);
+    mcp[3]->pinMode(i, OUTPUT);
+    mcp[4]->pinMode(i, OUTPUT);
+    mcp[5]->pinMode(i, INPUT_PULLUP);
+    mcp[6]->pinMode(i, INPUT_PULLUP);
+  }
+
+  //mcp = new MCP ( MAXLEDMCP);
+
+  //for (int gpio = 0; gpio < MAXGPIO; gpio++)
+  //{
+  // Serial.print("Setze PinMode für PIN ");
+  //Serial.println(gpio);
+  //mcp->pinMode(gpio  , INPUT_PULLUP);
+
+  //   mcp[2].pinMode(gpio, OUTPUT);
+  //   mcp[3].pinMode(gpio, OUTPUT);
+
+  //}
 
   // configure pin for output
   // mcp.pinMode(LED_PIN, OUTPUT);
@@ -217,9 +217,27 @@ void setup()
 
 void loop()
 {
-  Serial.println("Auswerten");
-  
-/*
+  //Serial.println("Auswerten");
+
+  for (int i = 0; i < 16; i++)
+  {
+    if (mcp[5]->digitalRead(i))
+    {
+      if (i < 8)
+      {
+        Serial.print("GPIOA");
+        Serial.print(i);
+        Serial.println(" gedrückt");
+      }
+      else
+      {
+        Serial.print("GPIOB");
+        Serial.print(i - 8);
+        Serial.println(" gedrückt");
+      }
+    }
+  }
+  /*
   delay(550);
   WEICHE1 = false;
   WEICHE2 = false;
@@ -236,8 +254,11 @@ void loop()
   WEICHE6 = true;
   WEICHE7 = true;
 
+
+
   mcpauswerten();
   */
+  /*
   for (int mcps=0; mcps<MAXLEDMCP;mcps++){
   for (int gpio = 0; gpio < MAXGPIO; gpio++)
   {
@@ -256,200 +277,199 @@ void loop()
     delay(1000);
   }
   }
-
+*/
 }
-
 
 void mcpauswerten()
 {
   // Weiche 1 und Weiche 2
-  if (!WEICHE1 && !WEICHE2) // Weiche 1 Gerade und Weiche 2 gerade
+  if (!weiche[0].getRichtung() && !weiche[1].getRichtung()) // Weiche 1 Gerade und Weiche 2 gerade
   {
-    /*//        TW1           TW2      /                                                   \ 
+    //        TW1           TW2      /                                                   \ 
     //--LED1---\----LED2----/-LED3--/----LED15-----------------------------LED25---------------LED26----/-----LED27----------
     //          \          /       TW5  S3RS3G                                                         /
     //           LED4     LED5                                                                        LED28
     //            \      /     TW3                                                                   /
     //--LED6-------\LED7/---LED8
-*/
+
     Serial.println("Weiche 1und 2 gerade");
-    mcp[0].digitalWrite(LED1, HIGH); //Ausfahrgleis
-    mcp[0].digitalWrite(LED2, HIGH);
-    mcp[0].digitalWrite(LED3, HIGH);
-    mcp[0].digitalWrite(LED4, LOW);
-    mcp[0].digitalWrite(LED5, LOW);
-    mcp[0].digitalWrite(LED7, HIGH);
-    mcp[0].digitalWrite(LED8, HIGH);
-    mcp[0].digitalWrite(LED6, HIGH); // Einfahrgleis
+    mcp[0]->digitalWrite(LED1, HIGH); //Ausfahrgleis
+    mcp[0]->digitalWrite(LED2, HIGH);
+    mcp[0]->digitalWrite(LED3, HIGH);
+    mcp[0]->digitalWrite(LED4, LOW);
+    mcp[0]->digitalWrite(LED5, LOW);
+    mcp[0]->digitalWrite(LED7, HIGH);
+    mcp[0]->digitalWrite(LED8, HIGH);
+    mcp[0]->digitalWrite(LED6, HIGH); // Einfahrgleis
     //Signal Einfahrgleis ROT
-    mcp[1].digitalWrite(SIGNALROT1, HIGH);
-    mcp[1].digitalWrite(SIGNALROT2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT1, HIGH);
+    mcp[1]->digitalWrite(SIGNALROT2, LOW);
   }
-  if (WEICHE1 && WEICHE2)
+  if (weiche[0].getRichtung() && weiche[1].getRichtung())
   {
-    mcp[0].digitalWrite(LED1, HIGH);
-    mcp[0].digitalWrite(LED2, LOW);
-    mcp[0].digitalWrite(LED3, HIGH);
-    mcp[0].digitalWrite(LED4, HIGH);
-    mcp[0].digitalWrite(LED5, HIGH);
-    mcp[0].digitalWrite(LED6, LOW);
-    mcp[0].digitalWrite(LED7, HIGH);
-    mcp[0].digitalWrite(LED8, LOW);
+    mcp[0]->digitalWrite(LED1, HIGH);
+    mcp[0]->digitalWrite(LED2, LOW);
+    mcp[0]->digitalWrite(LED3, HIGH);
+    mcp[0]->digitalWrite(LED4, HIGH);
+    mcp[0]->digitalWrite(LED5, HIGH);
+    mcp[0]->digitalWrite(LED6, LOW);
+    mcp[0]->digitalWrite(LED7, HIGH);
+    mcp[0]->digitalWrite(LED8, LOW);
     //Signal Einfahrgleis ROT
-    mcp[1].digitalWrite(SIGNALROT1, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN1, LOW);
+    mcp[1]->digitalWrite(SIGNALROT1, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN1, LOW);
   }
   // Ende Weiche 1 und Weiche 2
 
   // Weiche 3
-  if (!WEICHE3) // Weiche 3 ist gerade
+  if (!weiche[2].getRichtung()) // Weiche 3 ist gerade
   {
-    if (WEICHE2) // Weiche 2 abzweig, dann stecke nach weiche 2 aus
+    if (weiche[1].getRichtung()) // Weiche 2 abzweig, dann stecke nach weiche 2 aus
     {
-      mcp[0].digitalWrite(LED8, LOW);
+      mcp[0]->digitalWrite(LED8, LOW);
     }
     else
     {
-      mcp[0].digitalWrite(LED8, HIGH);
+      mcp[0]->digitalWrite(LED8, HIGH);
     }
 
-    mcp[0].digitalWrite(LED10, LOW);
-    mcp[0].digitalWrite(LED16, HIGH);
+    mcp[0]->digitalWrite(LED10, LOW);
+    mcp[0]->digitalWrite(LED16, HIGH);
   }
-  if (WEICHE3)
+  if (weiche[2].getRichtung())
   {
     Serial.println("Weiche3 abzweig");
-    if (WEICHE2)
+    if (weiche[1].getRichtung())
     {
-      mcp[0].digitalWrite(LED8, LOW);
+      mcp[0]->digitalWrite(LED8, LOW);
     }
     else
     {
-      mcp[0].digitalWrite(LED8, HIGH);
+      mcp[0]->digitalWrite(LED8, HIGH);
     }
-    if (!WEICHE4) // weiche 4 gerade
+    if (!weiche[3].getRichtung()) // weiche 4 gerade
     {
-      mcp[0].digitalWrite(LED10, LOW);
+      mcp[0]->digitalWrite(LED10, LOW);
     }
-    if (WEICHE4) // weiche 4 abzweig
+    if (weiche[3].getRichtung()) // weiche 4 abzweig
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
 
-      mcp[0].digitalWrite(LED16, LOW);
+      mcp[0]->digitalWrite(LED16, LOW);
     }
   }
   // Ende Weiche 3
   //Weiche 4
-  if (!WEICHE4) // Weiche 4 ist gerade
+  if (!weiche[3].getRichtung()) // Weiche 4 ist gerade
   {
-    if (WEICHE3) //Weiche 3 ist abzweig dann weg nach 3 an
+    if (weiche[2].getRichtung()) //Weiche 3 ist abzweig dann weg nach 3 an
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
     }
     else
     {
-      mcp[0].digitalWrite(LED10, LOW);
+      mcp[0]->digitalWrite(LED10, LOW);
     }
 
-    mcp[0].digitalWrite(LED9, HIGH);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED9, HIGH);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT2, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT2, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
 
   //Weiche 4
-  if (WEICHE4) // Weiche 4 ist abzweig
+  if (weiche[3].getRichtung()) // Weiche 4 ist abzweig
   {
-    if (WEICHE3) // Weiche 3 ist abzweig dann weg nach weiche 3 an
+    if (weiche[2].getRichtung()) // Weiche 3 ist abzweig dann weg nach weiche 3 an
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
     }
     else
     {
-      mcp[0].digitalWrite(LED10, LOW); // weiche 4 ist gerade
+      mcp[0]->digitalWrite(LED10, LOW); // weiche 4 ist gerade
     }
-    mcp[0].digitalWrite(LED9, LOW);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED9, LOW);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
     //Signal Abstellgleis ROT
-    mcp[1].digitalWrite(SIGNALROT2, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT2, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
   //ENDE Weiche 4
   // Weiche 5
-  if (WEICHE5) // TRUE Weiche 5 ist abzweig
+  if (weiche[4].getRichtung()) // TRUE Weiche 5 ist abzweig
 
   {
-    /*//                              TW6 /---LED18--------------------------LED23------\
+    //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
 //                               LED20                                              LED24
     //        TW1           TW2      /                                                   \ 
-//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------*/
+//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------
     Serial.println("Weiche5 ist abzweig");
 
-    mcp[1].digitalWrite(LED20, HIGH);
+    mcp[1]->digitalWrite(LED20, HIGH);
 
-    mcp[1].digitalWrite(LED17, LOW);
+    mcp[1]->digitalWrite(LED17, LOW);
 
-    mcp[1].digitalWrite(SIGNALROT5, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN5, LOW);
+    mcp[1]->digitalWrite(SIGNALROT5, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN5, LOW);
   }
 
-  if (!WEICHE5) // Weiche 5 ist gerade
+  if (!weiche[4].getRichtung()) // Weiche 5 ist gerade
 
   {
-    /*//                              TW6 /---LED18--------------------------LED23------\
+    //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
 //                               LED20                                              LED24
     //        TW1           TW2      /                                                   \ 
-//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------*/
+//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------
     Serial.println("Weiche5 ist gerade");
-    mcp[1].digitalWrite(LED20, LOW);
+    mcp[1]->digitalWrite(LED20, LOW);
 
-    mcp[1].digitalWrite(LED17, HIGH);
+    mcp[1]->digitalWrite(LED17, HIGH);
   }
   // Ende Weiche 5
 
   // Weiche 6
-  /*//                                      /--LED19----------------------LED22---\
+  //                                    /--LED19----------------------LED22---\
 //                                     /   S5RS5G                              \
 //                                    /                                         \
 //                                   /                                           \
 //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
-//                               LED20                                              LED24*/
-  if (WEICHE6) // Weiche 6 ist abzweig
+//                               LED20                                              LED24
+  if (weiche[5].getRichtung()) // Weiche 6 ist abzweig
   {
-    mcp[1].digitalWrite(LED18, HIGH);
-    mcp[1].digitalWrite(LED19, LOW);
-    if (WEICHE5)
+    mcp[1]->digitalWrite(LED18, HIGH);
+    mcp[1]->digitalWrite(LED19, LOW);
+    if (weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, HIGH);
+      mcp[1]->digitalWrite(LED20, HIGH);
     }
-    if (!WEICHE5)
+    if (!weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, LOW);
+      mcp[1]->digitalWrite(LED20, LOW);
     }
 
-    mcp[1].digitalWrite(SIGNALROT3, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN3, LOW);
+    mcp[1]->digitalWrite(SIGNALROT3, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN3, LOW);
   }
-  if (!WEICHE6) // Weiche 6 ist gerade
+  if (!weiche[5].getRichtung()) // Weiche 6 ist gerade
   {
-    mcp[1].digitalWrite(LED18, LOW);
-    mcp[1].digitalWrite(LED19, HIGH);
-    if (WEICHE5)
+    mcp[1]->digitalWrite(LED18, LOW);
+    mcp[1]->digitalWrite(LED19, HIGH);
+    if (weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, HIGH);
+      mcp[1]->digitalWrite(LED20, HIGH);
     }
-    if (!WEICHE5)
+    if (!weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, LOW);
+      mcp[1]->digitalWrite(LED20, LOW);
     }
 
-    mcp[1].digitalWrite(SIGNALROT4, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN4, LOW);
+    mcp[1]->digitalWrite(SIGNALROT4, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN4, LOW);
   }
   // ENDE WEICHE 6
 
@@ -461,23 +481,23 @@ void mcpauswerten()
   //                                           LED12                                LED33      /
   //                                              \     S6RS6G                      /         /----LED40-----
   //                                            TW8\----LED14------------LED34-----/         /
-  if (WEICHE7) // Weiche 7 auf abzweig
+  if (weiche[6].getRichtung()) // Weiche 7 auf abzweig
   {
-    mcp[0].digitalWrite(LED15, LOW);
-    mcp[0].digitalWrite(LED12, HIGH);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED15, LOW);
+    mcp[0]->digitalWrite(LED12, HIGH);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT6, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN6, LOW);
+    mcp[1]->digitalWrite(SIGNALROT6, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN6, LOW);
   }
-  if (!WEICHE7) // Weiche 7 auf gerade
+  if (!weiche[6].getRichtung()) // Weiche 7 auf gerade
   {
-    mcp[0].digitalWrite(LED15, HIGH);
-    mcp[0].digitalWrite(LED12, LOW);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED15, HIGH);
+    mcp[0]->digitalWrite(LED12, LOW);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT6, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN6, LOW);
+    mcp[1]->digitalWrite(SIGNALROT6, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN6, LOW);
   }
 
   // ENDE WEICHE 8
@@ -493,17 +513,17 @@ void mcpauswerten()
   //                                                \   S7RS7G                    LED35     LED38
   //                                                 \--LED13------------LED36---/-LED37---/----LED39---------
   //
-  if (WEICHE8) // Weiche 8 auf abzweig
+  if (weiche[7].getRichtung()) // Weiche 8 auf abzweig
   {
-    mcp[0].digitalWrite(LED14, HIGH);
+    mcp[0]->digitalWrite(LED14, HIGH);
 
-    mcp[0].digitalWrite(LED13, LOW);
+    mcp[0]->digitalWrite(LED13, LOW);
   }
-  if (!WEICHE8) // Weiche 8 auf gerade
+  if (!weiche[7].getRichtung()) // Weiche 8 auf gerade
   {
-    mcp[0].digitalWrite(LED14, LOW);
+    mcp[0]->digitalWrite(LED14, LOW);
 
-    mcp[0].digitalWrite(LED13, HIGH);
+    mcp[0]->digitalWrite(LED13, HIGH);
   }
 
   // ENDE WEICHE 8
