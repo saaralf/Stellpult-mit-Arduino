@@ -4,10 +4,9 @@ Weiche::Weiche()
 {
     setRichtung(false);
     setName("Weiche ohne Namen");
-    Serial.println("Weiche angelegt");
 }
 
-Weiche::Weiche(const String Name, const bool richtung){
+Weiche::Weiche(const int Name, const bool richtung){
     Weiche();
     setName(Name);
     setRichtung(richtung);
@@ -19,15 +18,27 @@ void Weiche::setRichtung(bool neuerichtung)
     this->richtung = neuerichtung;
 }
 
+String Weiche::getRichtungText() const
+{
+    if (richtung){
+    return "Abzweig";
+    }
+    else 
+    {
+    return "Gerade";
+    }
+}
+
 bool Weiche::getRichtung() const
 {
+
     return richtung;
 }
-void Weiche::setName(String neuername)
+void Weiche::setName(int neuername)
 {
    this-> name = neuername;
 }
-String Weiche::getName() const
+int Weiche::getName() const
 {
     return name;
 }

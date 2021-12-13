@@ -151,7 +151,7 @@
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
 #define MAXGPIO 16
 
-#define NUMBERWEICHEN 17
+#define NUMBERWEICHEN 17 //17
 #define MAXLEDMCP 2
 #define MAXTASTERMCP 3
 
@@ -171,10 +171,11 @@ void setup()
 
   for (int i; i <= NUMBERWEICHEN; i++)
   {
-    weiche[i] =  Weiche("Weiche" + i, false);
+
+    weiche[i] =  Weiche(i, false);
   }
 
-  Serial.print("Erzeuge MCPs: ");
+  Serial.println("Erzeuge MCPs: ");
   //Serial.println(0x20 + mcps, HEX);
   mcp[0] = new MCP("MCP 1", 0x20); // LEDs und Signale
   mcp[1] = new MCP("MCP 2", 0x21); // LEDs und Signale
@@ -189,36 +190,34 @@ void setup()
   {
     mcp[0]->pinMode(i, OUTPUT);
     mcp[1]->pinMode(i, OUTPUT);
-    mcp[2]->pinMode(i, OUTPUT);
-    mcp[3]->pinMode(i, OUTPUT);
+ //   mcp[2]->pinMode(i, OUTPUT);
+    /*mcp[3]->pinMode(i, OUTPUT);
     mcp[4]->pinMode(i, OUTPUT);
     mcp[5]->pinMode(i, INPUT_PULLUP);
     mcp[6]->pinMode(i, INPUT_PULLUP);
+    */
   }
-
-  //mcp = new MCP ( MAXLEDMCP);
-
-  //for (int gpio = 0; gpio < MAXGPIO; gpio++)
-  //{
-  // Serial.print("Setze PinMode für PIN ");
-  //Serial.println(gpio);
-  //mcp->pinMode(gpio  , INPUT_PULLUP);
-
-  //   mcp[2].pinMode(gpio, OUTPUT);
-  //   mcp[3].pinMode(gpio, OUTPUT);
-
-  //}
-
-  // configure pin for output
-  // mcp.pinMode(LED_PIN, OUTPUT);
 
   Serial.println("Looping...");
 }
 
 void loop()
 {
-  //Serial.println("Auswerten");
 
+for (int i=0; i<NUMBERWEICHEN;i++)
+{
+  Serial.print("Weiche ");
+  Serial.print(weiche[i].getName());
+  Serial.print(" ");
+  Serial.print(weiche[i].getRichtungText());
+
+  Serial.println("");
+  
+}
+    delay(1000);
+
+  //Serial.println("Auswerten");
+/*
   for (int i = 0; i < 16; i++)
   {
     if (mcp[5]->digitalRead(i))
@@ -237,6 +236,7 @@ void loop()
       }
     }
   }
+  */
   /*
   delay(550);
   WEICHE1 = false;
@@ -258,13 +258,12 @@ void loop()
 
   mcpauswerten();
   */
-  /*
-  for (int mcps=0; mcps<MAXLEDMCP;mcps++){
+  
+  
   for (int gpio = 0; gpio < MAXGPIO; gpio++)
   {
-    Serial.println(gpio);
-
-    mcp->digitalWrite(gpio, HIGH);
+  
+    mcp[0]->digitalWrite(gpio, HIGH);
     delay(1000);
   }
   delay(550);
@@ -273,13 +272,12 @@ void loop()
   {
     Serial.println(gpio);
 
-    mcp->digitalWrite(gpio, LOW);
+    mcp[0]->digitalWrite(gpio, LOW);
     delay(1000);
   }
-  }
-*/
+  
 }
-
+/*
 void mcpauswerten()
 {
   // Weiche 1 und Weiche 2
@@ -528,3 +526,4 @@ void mcpauswerten()
 
   // ENDE WEICHE 8
 }
+*/
