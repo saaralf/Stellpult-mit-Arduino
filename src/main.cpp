@@ -154,13 +154,21 @@
 #define NUMBERWEICHEN 17 //17
 #define MAXLEDMCP 2
 #define MAXTASTERMCP 3
+#define INT_PIN 2 // microcontroller pin attached to INTA/B
 
 void mcpauswerten();
-MCP *mcp[MAXLEDMCP];
+//MCP *mcp[MAXLEDMCP];
+Adafruit_MCP23X17 mcp;
+Adafruit_MCP23X17 mcp0;
+Adafruit_MCP23X17 mcp1;
+Adafruit_MCP23X17 mcp2;
+Adafruit_MCP23X17 mcp3;
+Adafruit_MCP23X17 mcp4;
+
 //Adafruit_MCP23X17 mcpLED[MAXLEDMCP];
 //Adafruit_MCP23X17 mcpTaster[MAXTASTERMCP];
 
-Weiche weiche[NUMBERWEICHEN];
+//Weiche weiche[NUMBERWEICHEN];
 
 //Stellpult *stellpult = new Stellpult();
 void setup()
@@ -169,30 +177,63 @@ void setup()
 
   Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
 
+  /*
   for (int i; i <= NUMBERWEICHEN; i++)
   {
 
-    weiche[i] =  Weiche(i, false);
+    // weiche[i] =  Weiche(i, false);
   }
-
+*/
   Serial.println("Erzeuge MCPs: ");
+  mcp.begin_I2C(0x20);
+  /*
   //Serial.println(0x20 + mcps, HEX);
-  mcp[0] = new MCP("MCP 1", 0x20); // LEDs und Signale
-  mcp[1] = new MCP("MCP 2", 0x21); // LEDs und Signale
-  mcp[2] = new MCP("MCP 3", 0x22); // LEDs und Signale
-  mcp[3] = new MCP("MCP 4", 0x23); // LEDs und Signale
-  mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
-  mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
-  mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
-                                   //mcp[7] = new MCP ("MCP 1",0x27);
+  mcp0.begin_I2C(0x20);   // LEDs und Signale
+  mcp1.begin_I2C(0x21);   // LEDs und Signale
+  mcp2.begin_I2C(0x22);   // LEDs und Signale
+  mcp3.begin_I2C( 0x23); // LEDs und Signale
+    mcp4.begin_I2C( 0x24); // LEDs und Signale
+*/
+  //mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
+  //mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
+  //mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
 
+  /*
+  mcp[0] = new MCP( 0x20); // LEDs und Signale
+  //mcp[1] = new MCP( 0x21); // LEDs und Signale
+  //mcp[2] = new MCP( 0x22); // LEDs und Signale
+  mcp[3] = new MCP("MCP 4", 0x23); // LEDs und Signale
+  //mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
+  //mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
+  //mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
+                                   //mcp[7] = new MCP ("MCP 1",0x27);
+*/
+  pinMode(INT_PIN, INPUT);
+  mcp.setupInterrupts(true, false, LOW);
+
+  // configure button pin for input with pull up
+
+  // enable interrupt on button_pin
   for (int i = 0; i < MAXGPIO; i++)
   {
+    /*
+    mcp0.pinMode(i, OUTPUT);
+    mcp1.pinMode(i, OUTPUT);
+
+    mcp2.pinMode(i, OUTPUT);
+
+    mcp3.pinMode(i, OUTPUT);
+    mcp4.pinMode(i, INPUT_PULLUP);
+*/
+    mcp.pinMode(i,INPUT);
+    mcp.setupInterruptPin(i, HIGH);
+
+    /*
     mcp[0]->pinMode(i, OUTPUT);
-    mcp[1]->pinMode(i, OUTPUT);
- //   mcp[2]->pinMode(i, OUTPUT);
-    /*mcp[3]->pinMode(i, OUTPUT);
-    mcp[4]->pinMode(i, OUTPUT);
+    //mcp[1]->pinMode(i, OUTPUT);
+  // mcp[2]->pinMode(i, OUTPUT);
+    mcp[3]->pinMode(i, OUTPUT);
+    /*mcp[4]->pinMode(i, OUTPUT);
     mcp[5]->pinMode(i, INPUT_PULLUP);
     mcp[6]->pinMode(i, INPUT_PULLUP);
     */
@@ -203,7 +244,22 @@ void setup()
 
 void loop()
 {
+  /*
+ if (mcp.digitalRead(0)) {
+    Serial.println("Button Pressed!");
+    delay(250);
+  }
+  */
+  if (!digitalRead(INT_PIN))
+  {
+    Serial.print("Interrupt detected on pin: ");
+    Serial.println(mcp.getLastInterruptPin());
+    delay(250); // debounce
+  }
+  Serial.print (".");
+      delay(250); // debounce
 
+  /*
 for (int i=0; i<NUMBERWEICHEN;i++)
 {
   Serial.print("Weiche ");
@@ -215,28 +271,9 @@ for (int i=0; i<NUMBERWEICHEN;i++)
   
 }
     delay(1000);
-
+*/
   //Serial.println("Auswerten");
-/*
-  for (int i = 0; i < 16; i++)
-  {
-    if (mcp[5]->digitalRead(i))
-    {
-      if (i < 8)
-      {
-        Serial.print("GPIOA");
-        Serial.print(i);
-        Serial.println(" gedrückt");
-      }
-      else
-      {
-        Serial.print("GPIOB");
-        Serial.print(i - 8);
-        Serial.println(" gedrückt");
-      }
-    }
-  }
-  */
+
   /*
   delay(550);
   WEICHE1 = false;
@@ -258,13 +295,34 @@ for (int i=0; i<NUMBERWEICHEN;i++)
 
   mcpauswerten();
   */
-  
-  
+  /*
+
   for (int gpio = 0; gpio < MAXGPIO; gpio++)
   {
-  
-    mcp[0]->digitalWrite(gpio, HIGH);
-    delay(1000);
+
+    if (mcp4.digitalRead(gpio))
+    {
+      if (gpio < 8)
+      {
+        Serial.print("GPIOA");
+        Serial.print(gpio);
+        Serial.println(" gedrückt");
+      }
+      else
+      {
+        Serial.print("GPIOB");
+        Serial.print(gpio - 8);
+        Serial.println(" gedrückt");
+      }
+    }
+    /*
+    Serial.println(gpio);
+
+    mcp0.digitalWrite(gpio, HIGH);
+    mcp1.digitalWrite(gpio, HIGH);
+    mcp2.digitalWrite(gpio, HIGH);
+    mcp3.digitalWrite(gpio, HIGH);
+
   }
   delay(550);
 
@@ -272,10 +330,13 @@ for (int i=0; i<NUMBERWEICHEN;i++)
   {
     Serial.println(gpio);
 
-    mcp[0]->digitalWrite(gpio, LOW);
-    delay(1000);
-  }
-  
+    mcp0.digitalWrite(gpio, LOW);
+    mcp1.digitalWrite(gpio, LOW);
+    mcp2.digitalWrite(gpio, LOW);
+    mcp3.digitalWrite(gpio, LOW);
+*/
+//}
+
 }
 /*
 void mcpauswerten()

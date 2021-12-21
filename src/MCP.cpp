@@ -1,6 +1,7 @@
 #include <MCP.h>
-
 MCP::MCP(const String Name, const int adresse)
+{}
+MCP::MCP(const int adresse)
 {
     if (adresse < 0x20 || adresse > 0x27)
     {
@@ -8,13 +9,12 @@ MCP::MCP(const String Name, const int adresse)
         return;
     }
 
-    setName(Name);
     setAdresse(adresse);
 
     Serial.print("Erzeuge MCP: ");
     Serial.println(adresse, HEX);
 
-    if (!mcp23017.begin_I2C(adresse))
+    if (!begin_I2C(adresse))
     {
         Serial.print("Error beim inistialisieren vom MCP ");
         Serial.print(getName());

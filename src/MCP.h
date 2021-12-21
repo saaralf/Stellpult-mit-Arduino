@@ -10,6 +10,7 @@ class MCP : public Adafruit_MCP23X17
 public:
     MCP();                                     // constructor
     MCP(const String Name, const int adresse); // constructor
+    MCP( const int adresse); // constructor
 
     ~MCP();
 
