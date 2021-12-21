@@ -155,15 +155,15 @@
 #define MAXLEDMCP 2
 #define MAXTASTERMCP 3
 #define INT_PIN 2 // microcontroller pin attached to INTA/B
-
+#define DEBUG_SERIAL 1
 void mcpauswerten();
 //MCP *mcp[MAXLEDMCP];
-Adafruit_MCP23X17 mcp;
+
 Adafruit_MCP23X17 mcp0;
-Adafruit_MCP23X17 mcp1;
-Adafruit_MCP23X17 mcp2;
-Adafruit_MCP23X17 mcp3;
-Adafruit_MCP23X17 mcp4;
+//Adafruit_MCP23X17 mcp1;
+//Adafruit_MCP23X17 mcp2;
+//Adafruit_MCP23X17 mcp3;
+//Adafruit_MCP23X17 mcp4;
 
 //Adafruit_MCP23X17 mcpLED[MAXLEDMCP];
 //Adafruit_MCP23X17 mcpTaster[MAXTASTERMCP];
@@ -177,23 +177,22 @@ void setup()
 
   Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
 
-  /*
+ 
   for (int i; i <= NUMBERWEICHEN; i++)
   {
 
     // weiche[i] =  Weiche(i, false);
   }
-*/
+
   Serial.println("Erzeuge MCPs: ");
-  mcp.begin_I2C(0x20);
-  /*
+  
   //Serial.println(0x20 + mcps, HEX);
   mcp0.begin_I2C(0x20);   // LEDs und Signale
-  mcp1.begin_I2C(0x21);   // LEDs und Signale
-  mcp2.begin_I2C(0x22);   // LEDs und Signale
-  mcp3.begin_I2C( 0x23); // LEDs und Signale
-    mcp4.begin_I2C( 0x24); // LEDs und Signale
-*/
+//  mcp1.begin_I2C(0x21);   // LEDs und Signale
+  //mcp2.begin_I2C(0x22);   // LEDs und Signale
+  //mcp3.begin_I2C( 0x23); // LEDs und Signale
+   // mcp4.begin_I2C( 0x24); // LEDs und Signale
+
   //mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
   //mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
   //mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
@@ -209,7 +208,7 @@ void setup()
                                    //mcp[7] = new MCP ("MCP 1",0x27);
 */
   pinMode(INT_PIN, INPUT);
-  mcp.setupInterrupts(true, false, LOW);
+  mcp0.setupInterrupts(true, false, LOW);
 
   // configure button pin for input with pull up
 
@@ -225,8 +224,8 @@ void setup()
     mcp3.pinMode(i, OUTPUT);
     mcp4.pinMode(i, INPUT_PULLUP);
 */
-    mcp.pinMode(i,INPUT);
-    mcp.setupInterruptPin(i, HIGH);
+    mcp0.pinMode(i,INPUT);
+    mcp0.setupInterruptPin(i, HIGH);
 
     /*
     mcp[0]->pinMode(i, OUTPUT);
@@ -238,9 +237,9 @@ void setup()
     mcp[6]->pinMode(i, INPUT_PULLUP);
     */
   }
-
   Serial.println("Looping...");
 }
+
 
 void loop()
 {
@@ -250,10 +249,11 @@ void loop()
     delay(250);
   }
   */
-  if (!digitalRead(INT_PIN))
+   if (!digitalRead(INT_PIN))
   {
     Serial.print("Interrupt detected on pin: ");
-    Serial.println(mcp.getLastInterruptPin());
+    Serial.println(mcp0.getLastInterruptPin());
+    Serial.println(mcp0.getDevice_address(),HEX);
     delay(250); // debounce
   }
   Serial.print (".");
