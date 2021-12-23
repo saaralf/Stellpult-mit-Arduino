@@ -2,10 +2,10 @@
 
 #include <Arduino.h>
 //#include <Stellpult.h>
-#include <MCP.h>
+//#include <MCP.h>
+#include <Adafruit_MCP23X17.h>
+
 #include <Weiche.h>
-#define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
-#define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
 
 /*
 //                                      /--LED19----------------------LED22---\
@@ -149,115 +149,196 @@
 #define SIGNALGRUEN15 15 // Signal 15 Gruen MCP 3 GPIOB7
 #define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
+
+// Anzahl der GPIO der MCP23017
 #define MAXGPIO 16
 
-#define NUMBERWEICHEN 17 //17
-#define MAXLEDMCP 2
-#define MAXTASTERMCP 3
-#define INT_PIN 2 // microcontroller pin attached to INTA/B
-#define DEBUG_SERIAL 1
+// Variablen die das Stellpult beschreiben
+#define NUMBERWEICHEN 17 //Anzahl der Weichen im Stellpult
+#define NUMBERSIGNALE 16 // Anzahl der Signale im Stellpult
+
+/*
+//Interupts Pins auf dem Arduino Mega 2560 sind
+//2, 3, 18, 19, 20, 21 
+// (pins 20 & 21 are not available to use for interrupts while they are used for I2C communication)
+*/
+// Definiere die Interupt Pins für die Eingabe MCP23017
+
+#define INT_PIN_TAST_MCP0 2      // Pin 2 muss mit dem MCP INTA mit dem TAST_MCP0 verbunden werden
+#define INT_PIN_TAST_MCP1 3      // Pin 3 muss mit dem MCP INTA mit dem TAST_MCP1 verbunden werden
+#define INT_PIN_TAST_MCP2 18     // Pin 18 muss mit dem MCP INTA mit dem TAST_MCP2 verbunden werden
+#define INT_PIN_LED_TAST_MCP0 19 // Pin 19 muss mit dem MCP INTA mit dem LED_TAST_MCP0 verbunden werden
+
+// Methoden bekannt geben
 void mcpauswerten();
+
 //MCP *mcp[MAXLEDMCP];
 
-Adafruit_MCP23X17 mcp0;
-//Adafruit_MCP23X17 mcp1;
-//Adafruit_MCP23X17 mcp2;
-//Adafruit_MCP23X17 mcp3;
-//Adafruit_MCP23X17 mcp4;
+// MCPs definieren
+//Adafruit_MCP23X17 LED_MCP0;
+//Adafruit_MCP23X17 LED_MCP1;
+//Adafruit_MCP23X17 LED_MCP2;
+//Adafruit_MCP23X17 LED_MCP3;
+Adafruit_MCP23X17 TAST_MCP0;
+Adafruit_MCP23X17 TAST_MCP1;
+//Adafruit_MCP23X17 TAST_MCP2;
+//Adafruit_MCP23X17 LED_TAST_MCP0; // Ein MCP mit Aus und Aingängen
 
-//Adafruit_MCP23X17 mcpLED[MAXLEDMCP];
-//Adafruit_MCP23X17 mcpTaster[MAXTASTERMCP];
+//für jede Weiche im Stellpult ein Objekt anlegen
+Weiche weiche[NUMBERWEICHEN];
+byte ledPin = 13;
+static uint16_t ledState = 0;
+volatile boolean awakenByInterrupt = false;
+void intCallBack() {
+  awakenByInterrupt = true;
+}
+void cleanInterrupts() {
+  delay(50);
+  TAST_MCP0.readGPIOAB();  TAST_MCP1.readGPIOAB();
 
-//Weiche weiche[NUMBERWEICHEN];
+  awakenByInterrupt = false;
+}
+void handleInterrupt() {
+ 
+ 
+  uint8_t  pin1 = TAST_MCP0.getLastInterruptPin();
+int pin1adr1  = TAST_MCP0.getDevice_address();
+     uint8_t pin2 = TAST_MCP1.getLastInterruptPin();
+int pin1adr2  = TAST_MCP1.getDevice_address();
+int pin=-1;
+Serial.print ("Button: ");
+pin1<255 ? pin=pin1 : pin=pin2 ;
+Serial.print (pin) ;
+Serial.print (" pressed ");
+Serial.print (" von MCP ");
+Serial.println (pin1<255?pin1adr1:pin1adr2 ,HEX);
+
+     
+  //uint8_t val = TAST_MCP0.getLastInterruptPinValue();
+
+  
+    if ( ledState ) {
+      digitalWrite(ledPin, LOW);
+    } else {
+      digitalWrite(ledPin, HIGH);
+    }
+
+    ledState = ! ledState;
+  
+
+  //while ( !TAST_MCP0.digitalRead(pin));
+  // and clean queued INT signal
+  cleanInterrupts();
+}
+
+
+
 
 //Stellpult *stellpult = new Stellpult();
 void setup()
 {
   Serial.begin(9600);
 
-  Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
+  Serial.print (digitalPinToInterrupt(INT_PIN_TAST_MCP0));
+  pinMode(ledPin, OUTPUT);
+  //Interupt Pins des Arduino setzen
+  pinMode(2, INPUT_PULLUP);
+ pinMode(3, INPUT_PULLUP);
+ // pinMode(INT_PIN_TAST_MCP2, INPUT_PULLUP);
+  //pinMode(INT_PIN_LED_TAST_MCP0, INPUT_PULLUP);
 
- 
+  attachInterrupt(digitalPinToInterrupt(2), intCallBack, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(3), intCallBack, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(INT_PIN_TAST_MCP2), intCallBack, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(INT_PIN_LED_TAST_MCP0), intCallBack, CHANGE);
+  Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
+  // Erzeuge Zustände für Weichen
+  //Alle Weichen sollen im Zustand gerade beginnen. false bedeutet gerade
   for (int i; i <= NUMBERWEICHEN; i++)
   {
-
-    // weiche[i] =  Weiche(i, false);
+    //weiche[i] = Weiche(i, false);
   }
 
   Serial.println("Erzeuge MCPs: ");
-  
-  //Serial.println(0x20 + mcps, HEX);
-  mcp0.begin_I2C(0x20);   // LEDs und Signale
-//  mcp1.begin_I2C(0x21);   // LEDs und Signale
-  //mcp2.begin_I2C(0x22);   // LEDs und Signale
-  //mcp3.begin_I2C( 0x23); // LEDs und Signale
-   // mcp4.begin_I2C( 0x24); // LEDs und Signale
-
-  //mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
-  //mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
-  //mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
-
-  /*
-  mcp[0] = new MCP( 0x20); // LEDs und Signale
-  //mcp[1] = new MCP( 0x21); // LEDs und Signale
-  //mcp[2] = new MCP( 0x22); // LEDs und Signale
-  mcp[3] = new MCP("MCP 4", 0x23); // LEDs und Signale
-  //mcp[4] = new MCP("MCP 5", 0x24); // LEDs und Signale
-  //mcp[5] = new MCP("MCP 6", 0x25); // Taster Weichen und Signale
-  //mcp[6] = new MCP("MCP 7", 0x26); // Taster Weichen und Signale
-                                   //mcp[7] = new MCP ("MCP 1",0x27);
+  // Erzeuge die MCPs
+  /*LED_MCP0.begin_I2C(0x20); // LEDs und Signale
+  LED_MCP1.begin_I2C(0x21); // LEDs und Signale
+  LED_MCP2.begin_I2C(0x22); // LEDs und Signale
+  LED_MCP3.begin_I2C(0x23); // LEDs und Signale
 */
-  pinMode(INT_PIN, INPUT);
-  mcp0.setupInterrupts(true, false, LOW);
+  TAST_MCP0.begin_I2C(0x24);     // Nur Taster
+  TAST_MCP1.begin_I2C(0x25);     // Nur Taster
+  //TAST_MCP2.begin_I2C(0x26);     // Nur Taster
+  //LED_TAST_MCP0.begin_I2C(0x27); // LEDs und Signale und Taster
 
-  // configure button pin for input with pull up
+  // MCP Setup Interrupts
+  TAST_MCP0.setupInterrupts(true, false, LOW);
+  TAST_MCP1.setupInterrupts(true, false, LOW);
+  //TAST_MCP2.setupInterrupts(true, false, LOW);
+  //LED_TAST_MCP0.setupInterrupts(true, false, LOW);
 
-  // enable interrupt on button_pin
   for (int i = 0; i < MAXGPIO; i++)
   {
-    /*
-    mcp0.pinMode(i, OUTPUT);
-    mcp1.pinMode(i, OUTPUT);
+    // Alle Pins an LED MCP auf OUTPUT
+    //LED_MCP0.pinMode(i, OUTPUT);
+    //LED_MCP1.pinMode(i, OUTPUT);
+    //LED_MCP2.pinMode(i, OUTPUT);
+    //LED_MCP3.pinMode(i, OUTPUT);
 
-    mcp2.pinMode(i, OUTPUT);
-
-    mcp3.pinMode(i, OUTPUT);
-    mcp4.pinMode(i, INPUT_PULLUP);
-*/
-    mcp0.pinMode(i,INPUT);
-    mcp0.setupInterruptPin(i, HIGH);
-
-    /*
-    mcp[0]->pinMode(i, OUTPUT);
-    //mcp[1]->pinMode(i, OUTPUT);
-  // mcp[2]->pinMode(i, OUTPUT);
-    mcp[3]->pinMode(i, OUTPUT);
-    /*mcp[4]->pinMode(i, OUTPUT);
-    mcp[5]->pinMode(i, INPUT_PULLUP);
-    mcp[6]->pinMode(i, INPUT_PULLUP);
-    */
+    // Alle Pins am Tast MCP auf OUTPUT (ohne PULLUP, da Hardwareseitig verbaut)
+    TAST_MCP0.pinMode(i, INPUT);
+    TAST_MCP1.pinMode(i, INPUT);
+    //TAST_MCP2.pinMode(i, INPUT);
+    // Setze Interrupt PIN HIGH
+    TAST_MCP0.setupInterruptPin(i, HIGH);
+    TAST_MCP1.setupInterruptPin(i, HIGH);
+    //TAST_MCP2.setupInterruptPin(i, HIGH);
+    // Definiere LED_TAST_MCP0
+    //Zuerst die OUTPUTS
+    // Annahme alle GPIOA = OUTPUT
+    // TODO: Hardwareseitig prüfen und hier eintragen
+    if (i < 8)
+    {
+      ////LED_TAST_MCP0.pinMode(i, OUTPUT);
+    }
+    // Dann die Taster
+    if (i > 7)
+    {
+      //LED_TAST_MCP0.pinMode(i, INPUT);
+      //LED_TAST_MCP0.setupInterruptPin(i, HIGH);
+    }
   }
+        digitalWrite(ledPin, LOW);
+
   Serial.println("Looping...");
 }
 
-
 void loop()
 {
+  /*if (!digitalRead(2))
+  {
+
+    Serial.print (TAST_MCP0.getLastInterruptPin());
+    //    handleInterrupt();
+    }
+        if (!digitalRead(3))
+  { Serial.print (TAST_MCP1.getLastInterruptPin());
+
+
+  }*/
+  if (awakenByInterrupt) {
+
+    handleInterrupt();
+  }
   /*
  if (mcp.digitalRead(0)) {
     Serial.println("Button Pressed!");
     delay(250);
   }
   */
-   if (!digitalRead(INT_PIN))
-  {
-    Serial.print("Interrupt detected on pin: ");
-    Serial.println(mcp0.getLastInterruptPin());
-    Serial.println(mcp0.getDevice_address(),HEX);
-    delay(250); // debounce
-  }
-  Serial.print (".");
-      delay(250); // debounce
+    
+  Serial.print(".");
+  delay(250); // debounce
 
   /*
 for (int i=0; i<NUMBERWEICHEN;i++)
@@ -335,8 +416,7 @@ for (int i=0; i<NUMBERWEICHEN;i++)
     mcp2.digitalWrite(gpio, LOW);
     mcp3.digitalWrite(gpio, LOW);
 */
-//}
-
+  //}
 }
 /*
 void mcpauswerten()
