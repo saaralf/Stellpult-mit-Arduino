@@ -175,7 +175,7 @@ void mcpauswerten();
 //MCP *mcp[MAXLEDMCP];
 
 // MCPs definieren
-//Adafruit_MCP23X17 LED_MCP0;
+Adafruit_MCP23X17 LED_MCP0;
 //Adafruit_MCP23X17 LED_MCP1;
 //Adafruit_MCP23X17 LED_MCP2;
 //Adafruit_MCP23X17 LED_MCP3;
