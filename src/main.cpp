@@ -169,82 +169,63 @@
 #define INT_PIN_TAST_MCP2 18     // Pin 18 muss mit dem MCP INTA mit dem TAST_MCP2 verbunden werden
 #define INT_PIN_LED_TAST_MCP0 19 // Pin 19 muss mit dem MCP INTA mit dem LED_TAST_MCP0 verbunden werden
 
+bool DEBUG = true;
 // Methoden bekannt geben
 void mcpauswerten();
+void handleInterrupt();
 
 //MCP *mcp[MAXLEDMCP];
 
 // MCPs definieren
 Adafruit_MCP23X17 LED_MCP0;
-//Adafruit_MCP23X17 LED_MCP1;
-//Adafruit_MCP23X17 LED_MCP2;
-//Adafruit_MCP23X17 LED_MCP3;
+Adafruit_MCP23X17 LED_MCP1;
+Adafruit_MCP23X17 LED_MCP2;
+Adafruit_MCP23X17 LED_MCP3;
 Adafruit_MCP23X17 TAST_MCP0;
 Adafruit_MCP23X17 TAST_MCP1;
-//Adafruit_MCP23X17 TAST_MCP2;
-//Adafruit_MCP23X17 LED_TAST_MCP0; // Ein MCP mit Aus und Aingängen
+Adafruit_MCP23X17 TAST_MCP2;
+Adafruit_MCP23X17 LED_TAST_MCP0; // Ein MCP mit Aus und Aingängen
 
 //für jede Weiche im Stellpult ein Objekt anlegen
 Weiche weiche[NUMBERWEICHEN];
 byte ledPin = 13;
 static uint16_t ledState = 0;
 volatile boolean awakenByInterrupt = false;
-void intCallBack() {
+
+void intCallBack()
+{
   awakenByInterrupt = true;
 }
-void cleanInterrupts() {
+void cleanInterrupts()
+{
   delay(50);
-  TAST_MCP0.readGPIOAB();  TAST_MCP1.readGPIOAB();
+  TAST_MCP0.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
 
   awakenByInterrupt = false;
 }
-void handleInterrupt() {
- 
- 
-  uint8_t  pin1 = TAST_MCP0.getLastInterruptPin();
-int pin1adr1  = TAST_MCP0.getDevice_address();
-     uint8_t pin2 = TAST_MCP1.getLastInterruptPin();
-int pin1adr2  = TAST_MCP1.getDevice_address();
-int pin=-1;
-Serial.print ("Button: ");
-pin1<255 ? pin=pin1 : pin=pin2 ;
-Serial.print (pin) ;
-Serial.print (" pressed ");
-Serial.print (" von MCP ");
-Serial.println (pin1<255?pin1adr1:pin1adr2 ,HEX);
 
-     
-  //uint8_t val = TAST_MCP0.getLastInterruptPinValue();
-
-  
-    if ( ledState ) {
-      digitalWrite(ledPin, LOW);
-    } else {
-      digitalWrite(ledPin, HIGH);
-    }
-
-    ledState = ! ledState;
-  
-
-  //while ( !TAST_MCP0.digitalRead(pin));
-  // and clean queued INT signal
-  cleanInterrupts();
+void printButtonPressed(int pin, int mcpadr)
+{
+  Serial.print("Button: ");
+  Serial.print(pin);
+  Serial.print(" pressed ");
+  Serial.print(" von MCP ");
+  Serial.println(mcpadr, HEX);
 }
-
-
-
-
 //Stellpult *stellpult = new Stellpult();
 void setup()
 {
   Serial.begin(9600);
 
-  Serial.print (digitalPinToInterrupt(INT_PIN_TAST_MCP0));
+  Serial.print(digitalPinToInterrupt(INT_PIN_TAST_MCP0));
   pinMode(ledPin, OUTPUT);
   //Interupt Pins des Arduino setzen
   pinMode(2, INPUT_PULLUP);
- pinMode(3, INPUT_PULLUP);
- // pinMode(INT_PIN_TAST_MCP2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
+  // pinMode(INT_PIN_TAST_MCP2, INPUT_PULLUP);
   //pinMode(INT_PIN_LED_TAST_MCP0, INPUT_PULLUP);
 
   attachInterrupt(digitalPinToInterrupt(2), intCallBack, CHANGE);
@@ -268,8 +249,8 @@ void setup()
 */
   TAST_MCP0.begin_I2C(0x24);     // Nur Taster
   TAST_MCP1.begin_I2C(0x25);     // Nur Taster
-  //TAST_MCP2.begin_I2C(0x26);     // Nur Taster
-  //LED_TAST_MCP0.begin_I2C(0x27); // LEDs und Signale und Taster
+  TAST_MCP2.begin_I2C(0x26);     // Nur Taster
+  LED_TAST_MCP0.begin_I2C(0x27); // LEDs und Signale und Taster
 
   // MCP Setup Interrupts
   TAST_MCP0.setupInterrupts(true, false, LOW);
@@ -308,7 +289,7 @@ void setup()
       //LED_TAST_MCP0.setupInterruptPin(i, HIGH);
     }
   }
-        digitalWrite(ledPin, LOW);
+  digitalWrite(ledPin, LOW);
 
   Serial.println("Looping...");
 }
@@ -326,7 +307,8 @@ void loop()
 
 
   }*/
-  if (awakenByInterrupt) {
+  if (awakenByInterrupt)
+  {
 
     handleInterrupt();
   }
@@ -336,11 +318,530 @@ void loop()
     delay(250);
   }
   */
-    
+
   Serial.print(".");
   delay(250); // debounce
+}
 
-  /*
+void handleInterrupt()
+{
+
+  int pin1 = TAST_MCP0.getLastInterruptPin();
+  int pin1adr1 = TAST_MCP0.getDevice_address();
+
+  int pin2 = TAST_MCP1.getLastInterruptPin();
+  int pin1adr2 = TAST_MCP1.getDevice_address();
+
+  int pin3 = TAST_MCP2.getLastInterruptPin();
+  int pin1adr3 = TAST_MCP2.getDevice_address();
+
+  int pin4 = LED_TAST_MCP0.getLastInterruptPin();
+  int pin1adr4 = LED_TAST_MCP0.getDevice_address();
+
+  switch (pin1)
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+
+  switch (pin2 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+  switch (pin3 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+  switch (pin4 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+
+
+    //uint8_t val = TAST_MCP0.getLastInterruptPinValue();
+
+    if (ledState)
+    {
+      digitalWrite(ledPin, LOW);
+    }
+    else
+    {
+      digitalWrite(ledPin, HIGH);
+    }
+
+  ledState = !ledState;
+
+  //while ( !TAST_MCP0.digitalRead(pin));
+  // and clean queued INT signal
+  cleanInterrupts();
+}
+
+/*
 for (int i=0; i<NUMBERWEICHEN;i++)
 {
   Serial.print("Weiche ");
@@ -353,9 +854,9 @@ for (int i=0; i<NUMBERWEICHEN;i++)
 }
     delay(1000);
 */
-  //Serial.println("Auswerten");
+//Serial.println("Auswerten");
 
-  /*
+/*
   delay(550);
   WEICHE1 = false;
   WEICHE2 = false;
@@ -364,6 +865,7 @@ for (int i=0; i<NUMBERWEICHEN;i++)
   WEICHE5 = true;
   WEICHE6 = false;
   WEICHE7 = false;
+}
 
   mcpauswerten();
 
@@ -374,9 +876,11 @@ for (int i=0; i<NUMBERWEICHEN;i++)
 
 
 
+
+
   mcpauswerten();
   */
-  /*
+/*
 
   for (int gpio = 0; gpio < MAXGPIO; gpio++)
   {
@@ -416,8 +920,8 @@ for (int i=0; i<NUMBERWEICHEN;i++)
     mcp2.digitalWrite(gpio, LOW);
     mcp3.digitalWrite(gpio, LOW);
 */
-  //}
-}
+//}
+
 /*
 void mcpauswerten()
 {
