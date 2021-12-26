@@ -2,10 +2,10 @@
 
 #include <Arduino.h>
 //#include <Stellpult.h>
-#include <MCP.h>
+//#include <MCP.h>
+#include <Adafruit_MCP23X17.h>
 
-#define GPIOA [8] = {0, 1, 2, 3, 4, 5, 6, 7}
-#define GPIOB [8] = {8, 9, 10, 11, 12, 13, 14, 15}
+#include <Weiche.h>
 
 /*
 //                                      /--LED19----------------------LED22---\
@@ -149,76 +149,713 @@
 #define SIGNALGRUEN15 15 // Signal 15 Gruen MCP 3 GPIOB7
 #define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
 #define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
-#define MAXGPIO 16
-#define MCP1ADDR 0x20
-#define MCP2ADDR 0x21
-#define MCP3ADDR 0x22
-#define MCP4ADDR 0x23
-#define MCP5ADDR 0x24
-#define MCP6ADDR 0x25
-#define MCP7ADDR 0x26
-#define MCP8ADDR 0x27
-#define MAXLEDMCP 2
- bool WEICHE1;  // False gerade, true abzweig
-    bool WEICHE2;  // False gerade, true abzweig
-    bool WEICHE3;  // False gerade, true abzweig
-    bool WEICHE4;  // False gerade, true abzweig
-    bool WEICHE5;  // False gerade, true abzweig
-    bool WEICHE6;  // False gerade, true abzweig
-    bool WEICHE7;  // False gerade, true abzweig
-    bool WEICHE8;  // False gerade, true abzweig
-    bool WEICHE9;  // False gerade, true abzweig
-    bool WEICHE10; // False gerade, true abzweig
-    bool WEICHE11; // False gerade, true abzweig
-    bool WEICHE12; // False gerade, true abzweig
-    bool WEICHE13; // False gerade, true abzweig
-    bool WEICHE14; // False gerade, true abzweig
-void mcpauswerten();
-    MCP *mcp ;
 
+// Anzahl der GPIO der MCP23017
+#define MAXGPIO 16
+
+// Variablen die das Stellpult beschreiben
+#define NUMBERWEICHEN 17 //Anzahl der Weichen im Stellpult
+#define NUMBERSIGNALE 16 // Anzahl der Signale im Stellpult
+
+/*
+//Interupts Pins auf dem Arduino Mega 2560 sind
+//2, 3, 18, 19, 20, 21 
+// (pins 20 & 21 are not available to use for interrupts while they are used for I2C communication)
+*/
+// Definiere die Interupt Pins für die Eingabe MCP23017
+
+#define INT_PIN_TAST_MCP0 2      // Pin 2 muss mit dem MCP INTA mit dem TAST_MCP0 verbunden werden
+#define INT_PIN_TAST_MCP1 3      // Pin 3 muss mit dem MCP INTA mit dem TAST_MCP1 verbunden werden
+#define INT_PIN_TAST_MCP2 18     // Pin 18 muss mit dem MCP INTA mit dem TAST_MCP2 verbunden werden
+#define INT_PIN_LED_TAST_MCP0 19 // Pin 19 muss mit dem MCP INTA mit dem LED_TAST_MCP0 verbunden werden
+
+bool DEBUG = true;
+// Methoden bekannt geben
+void mcpauswerten();
+void handleInterrupt();
+
+//MCP *mcp[MAXLEDMCP];
+
+// MCPs definieren
+Adafruit_MCP23X17 LED_MCP0;
+Adafruit_MCP23X17 LED_MCP1;
+Adafruit_MCP23X17 LED_MCP2;
+Adafruit_MCP23X17 LED_MCP3;
+Adafruit_MCP23X17 TAST_MCP0;
+Adafruit_MCP23X17 TAST_MCP1;
+Adafruit_MCP23X17 TAST_MCP2;
+Adafruit_MCP23X17 LED_TAST_MCP0; // Ein MCP mit Aus und Aingängen
+
+//für jede Weiche im Stellpult ein Objekt anlegen
+Weiche weiche[NUMBERWEICHEN];
+byte ledPin = 13;
+static uint16_t ledState = 0;
+volatile boolean awakenByInterrupt = false;
+
+void intCallBack()
+{
+  awakenByInterrupt = true;
+}
+void cleanInterrupts()
+{
+  delay(50);
+  TAST_MCP0.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
+  TAST_MCP1.readGPIOAB();
+
+  awakenByInterrupt = false;
+}
+
+void printButtonPressed(int pin, int mcpadr)
+{
+  Serial.print("Button: ");
+  Serial.print(pin);
+  Serial.print(" pressed ");
+  Serial.print(" von MCP ");
+  Serial.println(mcpadr, HEX);
+}
 //Stellpult *stellpult = new Stellpult();
 void setup()
 {
   Serial.begin(9600);
 
- mcp = new MCP ( MAXLEDMCP);
+  Serial.print(digitalPinToInterrupt(INT_PIN_TAST_MCP0));
+  pinMode(ledPin, OUTPUT);
+  //Interupt Pins des Arduino setzen
+  pinMode(2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
+  // pinMode(INT_PIN_TAST_MCP2, INPUT_PULLUP);
+  //pinMode(INT_PIN_LED_TAST_MCP0, INPUT_PULLUP);
 
-  for (int gpio = 0; gpio < MAXGPIO; gpio++)
+  attachInterrupt(digitalPinToInterrupt(2), intCallBack, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(3), intCallBack, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(INT_PIN_TAST_MCP2), intCallBack, CHANGE);
+  //attachInterrupt(digitalPinToInterrupt(INT_PIN_LED_TAST_MCP0), intCallBack, CHANGE);
+  Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
+  // Erzeuge Zustände für Weichen
+  //Alle Weichen sollen im Zustand gerade beginnen. false bedeutet gerade
+  for (int i; i <= NUMBERWEICHEN; i++)
   {
-    Serial.print("Setze PinMode für PIN ");
-    Serial.println(gpio);
-    mcp->pinMode(gpio  , OUTPUT);
-    
-    //   mcp[2].pinMode(gpio, OUTPUT);
-    //   mcp[3].pinMode(gpio, OUTPUT);
-    
+    //weiche[i] = Weiche(i, false);
   }
 
-  WEICHE1 = false;  // False gerade, true abzweig
-  WEICHE2 = false;  // False gerade, true abzweig
-  WEICHE3 = false;  // False gerade, true abzweig
-  WEICHE4 = false;  // False gerade, true abzweig
-  WEICHE5 = false;  // False gerade, true abzweig
-  WEICHE6 = false;  // False gerade, true abzweig
-  WEICHE7 = false;  // False gerade, true abzweig
-  WEICHE8 = false;  // False gerade, true abzweig
-  WEICHE9 = false;  // False gerade, true abzweig
-  WEICHE10 = false; // False gerade, true abzweig
-  WEICHE11 = false; // False gerade, true abzweig
-  WEICHE12 = false; // False gerade, true abzweig
-  WEICHE13 = false; // False gerade, true abzweig
-  WEICHE14 = false; // False gerade, true abzweig
+  Serial.println("Erzeuge MCPs: ");
+  // Erzeuge die MCPs
+  /*LED_MCP0.begin_I2C(0x20); // LEDs und Signale
+  LED_MCP1.begin_I2C(0x21); // LEDs und Signale
+  LED_MCP2.begin_I2C(0x22); // LEDs und Signale
+  LED_MCP3.begin_I2C(0x23); // LEDs und Signale
+*/
+  TAST_MCP0.begin_I2C(0x24);     // Nur Taster
+  TAST_MCP1.begin_I2C(0x25);     // Nur Taster
+  TAST_MCP2.begin_I2C(0x26);     // Nur Taster
+  LED_TAST_MCP0.begin_I2C(0x27); // LEDs und Signale und Taster
 
-  // configure pin for output
-  // mcp.pinMode(LED_PIN, OUTPUT);
+  // MCP Setup Interrupts
+  TAST_MCP0.setupInterrupts(true, false, LOW);
+  TAST_MCP1.setupInterrupts(true, false, LOW);
+  //TAST_MCP2.setupInterrupts(true, false, LOW);
+  //LED_TAST_MCP0.setupInterrupts(true, false, LOW);
+
+  for (int i = 0; i < MAXGPIO; i++)
+  {
+    // Alle Pins an LED MCP auf OUTPUT
+    //LED_MCP0.pinMode(i, OUTPUT);
+    //LED_MCP1.pinMode(i, OUTPUT);
+    //LED_MCP2.pinMode(i, OUTPUT);
+    //LED_MCP3.pinMode(i, OUTPUT);
+
+    // Alle Pins am Tast MCP auf OUTPUT (ohne PULLUP, da Hardwareseitig verbaut)
+    TAST_MCP0.pinMode(i, INPUT);
+    TAST_MCP1.pinMode(i, INPUT);
+    //TAST_MCP2.pinMode(i, INPUT);
+    // Setze Interrupt PIN HIGH
+    TAST_MCP0.setupInterruptPin(i, HIGH);
+    TAST_MCP1.setupInterruptPin(i, HIGH);
+    //TAST_MCP2.setupInterruptPin(i, HIGH);
+    // Definiere LED_TAST_MCP0
+    //Zuerst die OUTPUTS
+    // Annahme alle GPIOA = OUTPUT
+    // TODO: Hardwareseitig prüfen und hier eintragen
+    if (i < 8)
+    {
+      ////LED_TAST_MCP0.pinMode(i, OUTPUT);
+    }
+    // Dann die Taster
+    if (i > 7)
+    {
+      //LED_TAST_MCP0.pinMode(i, INPUT);
+      //LED_TAST_MCP0.setupInterruptPin(i, HIGH);
+    }
+  }
+  digitalWrite(ledPin, LOW);
 
   Serial.println("Looping...");
 }
 
 void loop()
 {
-  Serial.println("Auswerten");
+  /*if (!digitalRead(2))
+  {
+
+    Serial.print (TAST_MCP0.getLastInterruptPin());
+    //    handleInterrupt();
+    }
+        if (!digitalRead(3))
+  { Serial.print (TAST_MCP1.getLastInterruptPin());
+
+
+  }*/
+  if (awakenByInterrupt)
+  {
+
+    handleInterrupt();
+  }
+  /*
+ if (mcp.digitalRead(0)) {
+    Serial.println("Button Pressed!");
+    delay(250);
+  }
+  */
+
+  Serial.print(".");
+  delay(250); // debounce
+}
+
+void handleInterrupt()
+{
+
+  int pin1 = TAST_MCP0.getLastInterruptPin();
+  int pin1adr1 = TAST_MCP0.getDevice_address();
+
+  int pin2 = TAST_MCP1.getLastInterruptPin();
+  int pin1adr2 = TAST_MCP1.getDevice_address();
+
+  int pin3 = TAST_MCP2.getLastInterruptPin();
+  int pin1adr3 = TAST_MCP2.getDevice_address();
+
+  int pin4 = LED_TAST_MCP0.getLastInterruptPin();
+  int pin1adr4 = LED_TAST_MCP0.getDevice_address();
+
+  switch (pin1)
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin1, pin1adr1);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+
+  switch (pin2 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin2, pin1adr2);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+  switch (pin3 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin3, pin1adr3);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+  switch (pin4 )
+  {
+  case 0:
+    // Setze Dinege für Taste 0 gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+    break;
+  case 1:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+
+  case 2:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 3:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 4:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 5:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 6:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 7:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 8:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 9:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 10:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 11:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 12:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 13:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 14:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+  case 15:
+    // Setze Dinege für Taste x gedrückt.
+    if (DEBUG)
+    {
+      printButtonPressed(pin4, pin1adr4);
+    };
+    break;
+
+  default:
+    // Setze Dinege für Taste x gedrückt.
+    break;
+  }
+
+
+    //uint8_t val = TAST_MCP0.getLastInterruptPinValue();
+
+    if (ledState)
+    {
+      digitalWrite(ledPin, LOW);
+    }
+    else
+    {
+      digitalWrite(ledPin, HIGH);
+    }
+
+  ledState = !ledState;
+
+  //while ( !TAST_MCP0.digitalRead(pin));
+  // and clean queued INT signal
+  cleanInterrupts();
+}
+
+/*
+for (int i=0; i<NUMBERWEICHEN;i++)
+{
+  Serial.print("Weiche ");
+  Serial.print(weiche[i].getName());
+  Serial.print(" ");
+  Serial.print(weiche[i].getRichtungText());
+
+  Serial.println("");
   
+}
+    delay(1000);
+*/
+//Serial.println("Auswerten");
+
 /*
   delay(550);
   WEICHE1 = false;
@@ -228,6 +865,7 @@ void loop()
   WEICHE5 = true;
   WEICHE6 = false;
   WEICHE7 = false;
+}
 
   mcpauswerten();
 
@@ -236,15 +874,40 @@ void loop()
   WEICHE6 = true;
   WEICHE7 = true;
 
+
+
+
+
   mcpauswerten();
   */
-  for (int mcps=0; mcps<MAXLEDMCP;mcps++){
+/*
+
   for (int gpio = 0; gpio < MAXGPIO; gpio++)
   {
+
+    if (mcp4.digitalRead(gpio))
+    {
+      if (gpio < 8)
+      {
+        Serial.print("GPIOA");
+        Serial.print(gpio);
+        Serial.println(" gedrückt");
+      }
+      else
+      {
+        Serial.print("GPIOB");
+        Serial.print(gpio - 8);
+        Serial.println(" gedrückt");
+      }
+    }
+    /*
     Serial.println(gpio);
 
-    mcp->digitalWrite(gpio, HIGH);
-    delay(1000);
+    mcp0.digitalWrite(gpio, HIGH);
+    mcp1.digitalWrite(gpio, HIGH);
+    mcp2.digitalWrite(gpio, HIGH);
+    mcp3.digitalWrite(gpio, HIGH);
+
   }
   delay(550);
 
@@ -252,204 +915,204 @@ void loop()
   {
     Serial.println(gpio);
 
-    mcp->digitalWrite(gpio, LOW);
-    delay(1000);
-  }
-  }
+    mcp0.digitalWrite(gpio, LOW);
+    mcp1.digitalWrite(gpio, LOW);
+    mcp2.digitalWrite(gpio, LOW);
+    mcp3.digitalWrite(gpio, LOW);
+*/
+//}
 
-}
-
-
+/*
 void mcpauswerten()
 {
   // Weiche 1 und Weiche 2
-  if (!WEICHE1 && !WEICHE2) // Weiche 1 Gerade und Weiche 2 gerade
+  if (!weiche[0].getRichtung() && !weiche[1].getRichtung()) // Weiche 1 Gerade und Weiche 2 gerade
   {
-    /*//        TW1           TW2      /                                                   \ 
+    //        TW1           TW2      /                                                   \ 
     //--LED1---\----LED2----/-LED3--/----LED15-----------------------------LED25---------------LED26----/-----LED27----------
     //          \          /       TW5  S3RS3G                                                         /
     //           LED4     LED5                                                                        LED28
     //            \      /     TW3                                                                   /
     //--LED6-------\LED7/---LED8
-*/
+
     Serial.println("Weiche 1und 2 gerade");
-    mcp[0].digitalWrite(LED1, HIGH); //Ausfahrgleis
-    mcp[0].digitalWrite(LED2, HIGH);
-    mcp[0].digitalWrite(LED3, HIGH);
-    mcp[0].digitalWrite(LED4, LOW);
-    mcp[0].digitalWrite(LED5, LOW);
-    mcp[0].digitalWrite(LED7, HIGH);
-    mcp[0].digitalWrite(LED8, HIGH);
-    mcp[0].digitalWrite(LED6, HIGH); // Einfahrgleis
+    mcp[0]->digitalWrite(LED1, HIGH); //Ausfahrgleis
+    mcp[0]->digitalWrite(LED2, HIGH);
+    mcp[0]->digitalWrite(LED3, HIGH);
+    mcp[0]->digitalWrite(LED4, LOW);
+    mcp[0]->digitalWrite(LED5, LOW);
+    mcp[0]->digitalWrite(LED7, HIGH);
+    mcp[0]->digitalWrite(LED8, HIGH);
+    mcp[0]->digitalWrite(LED6, HIGH); // Einfahrgleis
     //Signal Einfahrgleis ROT
-    mcp[1].digitalWrite(SIGNALROT1, HIGH);
-    mcp[1].digitalWrite(SIGNALROT2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT1, HIGH);
+    mcp[1]->digitalWrite(SIGNALROT2, LOW);
   }
-  if (WEICHE1 && WEICHE2)
+  if (weiche[0].getRichtung() && weiche[1].getRichtung())
   {
-    mcp[0].digitalWrite(LED1, HIGH);
-    mcp[0].digitalWrite(LED2, LOW);
-    mcp[0].digitalWrite(LED3, HIGH);
-    mcp[0].digitalWrite(LED4, HIGH);
-    mcp[0].digitalWrite(LED5, HIGH);
-    mcp[0].digitalWrite(LED6, LOW);
-    mcp[0].digitalWrite(LED7, HIGH);
-    mcp[0].digitalWrite(LED8, LOW);
+    mcp[0]->digitalWrite(LED1, HIGH);
+    mcp[0]->digitalWrite(LED2, LOW);
+    mcp[0]->digitalWrite(LED3, HIGH);
+    mcp[0]->digitalWrite(LED4, HIGH);
+    mcp[0]->digitalWrite(LED5, HIGH);
+    mcp[0]->digitalWrite(LED6, LOW);
+    mcp[0]->digitalWrite(LED7, HIGH);
+    mcp[0]->digitalWrite(LED8, LOW);
     //Signal Einfahrgleis ROT
-    mcp[1].digitalWrite(SIGNALROT1, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN1, LOW);
+    mcp[1]->digitalWrite(SIGNALROT1, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN1, LOW);
   }
   // Ende Weiche 1 und Weiche 2
 
   // Weiche 3
-  if (!WEICHE3) // Weiche 3 ist gerade
+  if (!weiche[2].getRichtung()) // Weiche 3 ist gerade
   {
-    if (WEICHE2) // Weiche 2 abzweig, dann stecke nach weiche 2 aus
+    if (weiche[1].getRichtung()) // Weiche 2 abzweig, dann stecke nach weiche 2 aus
     {
-      mcp[0].digitalWrite(LED8, LOW);
+      mcp[0]->digitalWrite(LED8, LOW);
     }
     else
     {
-      mcp[0].digitalWrite(LED8, HIGH);
+      mcp[0]->digitalWrite(LED8, HIGH);
     }
 
-    mcp[0].digitalWrite(LED10, LOW);
-    mcp[0].digitalWrite(LED16, HIGH);
+    mcp[0]->digitalWrite(LED10, LOW);
+    mcp[0]->digitalWrite(LED16, HIGH);
   }
-  if (WEICHE3)
+  if (weiche[2].getRichtung())
   {
     Serial.println("Weiche3 abzweig");
-    if (WEICHE2)
+    if (weiche[1].getRichtung())
     {
-      mcp[0].digitalWrite(LED8, LOW);
+      mcp[0]->digitalWrite(LED8, LOW);
     }
     else
     {
-      mcp[0].digitalWrite(LED8, HIGH);
+      mcp[0]->digitalWrite(LED8, HIGH);
     }
-    if (!WEICHE4) // weiche 4 gerade
+    if (!weiche[3].getRichtung()) // weiche 4 gerade
     {
-      mcp[0].digitalWrite(LED10, LOW);
+      mcp[0]->digitalWrite(LED10, LOW);
     }
-    if (WEICHE4) // weiche 4 abzweig
+    if (weiche[3].getRichtung()) // weiche 4 abzweig
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
 
-      mcp[0].digitalWrite(LED16, LOW);
+      mcp[0]->digitalWrite(LED16, LOW);
     }
   }
   // Ende Weiche 3
   //Weiche 4
-  if (!WEICHE4) // Weiche 4 ist gerade
+  if (!weiche[3].getRichtung()) // Weiche 4 ist gerade
   {
-    if (WEICHE3) //Weiche 3 ist abzweig dann weg nach 3 an
+    if (weiche[2].getRichtung()) //Weiche 3 ist abzweig dann weg nach 3 an
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
     }
     else
     {
-      mcp[0].digitalWrite(LED10, LOW);
+      mcp[0]->digitalWrite(LED10, LOW);
     }
 
-    mcp[0].digitalWrite(LED9, HIGH);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED9, HIGH);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT2, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT2, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
 
   //Weiche 4
-  if (WEICHE4) // Weiche 4 ist abzweig
+  if (weiche[3].getRichtung()) // Weiche 4 ist abzweig
   {
-    if (WEICHE3) // Weiche 3 ist abzweig dann weg nach weiche 3 an
+    if (weiche[2].getRichtung()) // Weiche 3 ist abzweig dann weg nach weiche 3 an
     {
-      mcp[0].digitalWrite(LED10, HIGH);
+      mcp[0]->digitalWrite(LED10, HIGH);
     }
     else
     {
-      mcp[0].digitalWrite(LED10, LOW); // weiche 4 ist gerade
+      mcp[0]->digitalWrite(LED10, LOW); // weiche 4 ist gerade
     }
-    mcp[0].digitalWrite(LED9, LOW);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED9, LOW);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
     //Signal Abstellgleis ROT
-    mcp[1].digitalWrite(SIGNALROT2, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN2, LOW);
+    mcp[1]->digitalWrite(SIGNALROT2, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
   //ENDE Weiche 4
   // Weiche 5
-  if (WEICHE5) // TRUE Weiche 5 ist abzweig
+  if (weiche[4].getRichtung()) // TRUE Weiche 5 ist abzweig
 
   {
-    /*//                              TW6 /---LED18--------------------------LED23------\
+    //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
 //                               LED20                                              LED24
     //        TW1           TW2      /                                                   \ 
-//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------*/
+//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------
     Serial.println("Weiche5 ist abzweig");
 
-    mcp[1].digitalWrite(LED20, HIGH);
+    mcp[1]->digitalWrite(LED20, HIGH);
 
-    mcp[1].digitalWrite(LED17, LOW);
+    mcp[1]->digitalWrite(LED17, LOW);
 
-    mcp[1].digitalWrite(SIGNALROT5, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN5, LOW);
+    mcp[1]->digitalWrite(SIGNALROT5, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN5, LOW);
   }
 
-  if (!WEICHE5) // Weiche 5 ist gerade
+  if (!weiche[4].getRichtung()) // Weiche 5 ist gerade
 
   {
-    /*//                              TW6 /---LED18--------------------------LED23------\
+    //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
 //                               LED20                                              LED24
     //        TW1           TW2      /                                                   \ 
-//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------*/
+//--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------
     Serial.println("Weiche5 ist gerade");
-    mcp[1].digitalWrite(LED20, LOW);
+    mcp[1]->digitalWrite(LED20, LOW);
 
-    mcp[1].digitalWrite(LED17, HIGH);
+    mcp[1]->digitalWrite(LED17, HIGH);
   }
   // Ende Weiche 5
 
   // Weiche 6
-  /*//                                      /--LED19----------------------LED22---\
+  //                                    /--LED19----------------------LED22---\
 //                                     /   S5RS5G                              \
 //                                    /                                         \
 //                                   /                                           \
 //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
-//                               LED20                                              LED24*/
-  if (WEICHE6) // Weiche 6 ist abzweig
+//                               LED20                                              LED24
+  if (weiche[5].getRichtung()) // Weiche 6 ist abzweig
   {
-    mcp[1].digitalWrite(LED18, HIGH);
-    mcp[1].digitalWrite(LED19, LOW);
-    if (WEICHE5)
+    mcp[1]->digitalWrite(LED18, HIGH);
+    mcp[1]->digitalWrite(LED19, LOW);
+    if (weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, HIGH);
+      mcp[1]->digitalWrite(LED20, HIGH);
     }
-    if (!WEICHE5)
+    if (!weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, LOW);
+      mcp[1]->digitalWrite(LED20, LOW);
     }
 
-    mcp[1].digitalWrite(SIGNALROT3, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN3, LOW);
+    mcp[1]->digitalWrite(SIGNALROT3, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN3, LOW);
   }
-  if (!WEICHE6) // Weiche 6 ist gerade
+  if (!weiche[5].getRichtung()) // Weiche 6 ist gerade
   {
-    mcp[1].digitalWrite(LED18, LOW);
-    mcp[1].digitalWrite(LED19, HIGH);
-    if (WEICHE5)
+    mcp[1]->digitalWrite(LED18, LOW);
+    mcp[1]->digitalWrite(LED19, HIGH);
+    if (weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, HIGH);
+      mcp[1]->digitalWrite(LED20, HIGH);
     }
-    if (!WEICHE5)
+    if (!weiche[4].getRichtung())
     {
-      mcp[1].digitalWrite(LED20, LOW);
+      mcp[1]->digitalWrite(LED20, LOW);
     }
 
-    mcp[1].digitalWrite(SIGNALROT4, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN4, LOW);
+    mcp[1]->digitalWrite(SIGNALROT4, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN4, LOW);
   }
   // ENDE WEICHE 6
 
@@ -461,23 +1124,23 @@ void mcpauswerten()
   //                                           LED12                                LED33      /
   //                                              \     S6RS6G                      /         /----LED40-----
   //                                            TW8\----LED14------------LED34-----/         /
-  if (WEICHE7) // Weiche 7 auf abzweig
+  if (weiche[6].getRichtung()) // Weiche 7 auf abzweig
   {
-    mcp[0].digitalWrite(LED15, LOW);
-    mcp[0].digitalWrite(LED12, HIGH);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED15, LOW);
+    mcp[0]->digitalWrite(LED12, HIGH);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT6, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN6, LOW);
+    mcp[1]->digitalWrite(SIGNALROT6, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN6, LOW);
   }
-  if (!WEICHE7) // Weiche 7 auf gerade
+  if (!weiche[6].getRichtung()) // Weiche 7 auf gerade
   {
-    mcp[0].digitalWrite(LED15, HIGH);
-    mcp[0].digitalWrite(LED12, LOW);
-    mcp[0].digitalWrite(LED11, HIGH);
+    mcp[0]->digitalWrite(LED15, HIGH);
+    mcp[0]->digitalWrite(LED12, LOW);
+    mcp[0]->digitalWrite(LED11, HIGH);
 
-    mcp[1].digitalWrite(SIGNALROT6, HIGH);
-    mcp[1].digitalWrite(SIGNALGRUEN6, LOW);
+    mcp[1]->digitalWrite(SIGNALROT6, HIGH);
+    mcp[1]->digitalWrite(SIGNALGRUEN6, LOW);
   }
 
   // ENDE WEICHE 8
@@ -493,18 +1156,19 @@ void mcpauswerten()
   //                                                \   S7RS7G                    LED35     LED38
   //                                                 \--LED13------------LED36---/-LED37---/----LED39---------
   //
-  if (WEICHE8) // Weiche 8 auf abzweig
+  if (weiche[7].getRichtung()) // Weiche 8 auf abzweig
   {
-    mcp[0].digitalWrite(LED14, HIGH);
+    mcp[0]->digitalWrite(LED14, HIGH);
 
-    mcp[0].digitalWrite(LED13, LOW);
+    mcp[0]->digitalWrite(LED13, LOW);
   }
-  if (!WEICHE8) // Weiche 8 auf gerade
+  if (!weiche[7].getRichtung()) // Weiche 8 auf gerade
   {
-    mcp[0].digitalWrite(LED14, LOW);
+    mcp[0]->digitalWrite(LED14, LOW);
 
-    mcp[0].digitalWrite(LED13, HIGH);
+    mcp[0]->digitalWrite(LED13, HIGH);
   }
 
   // ENDE WEICHE 8
 }
+*/

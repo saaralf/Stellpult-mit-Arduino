@@ -1,44 +1,51 @@
 #include <MCP.h>
-
-MCP::MCP(const int maxmcps)
+MCP::MCP(const String Name, const int adresse)
+{}
+MCP::MCP(const int adresse)
 {
-    if (maxmcps > MAXLEDMCP)
+    if (adresse < 0x20 || adresse > 0x27)
     {
-        Serial.println("Anzahl MCPs nicht möglich");
+        Serial.println("ungültige Adresse");
+        return;
     }
 
-    Adafruit_MCP23X17 mcp[MAXLEDMCP];
+    setAdresse(adresse);
 
-    for (int mcps = 0; mcps < maxmcps; mcps++)
+    Serial.print("Erzeuge MCP: ");
+    Serial.println(adresse, HEX);
+
+    if (!begin_I2C(adresse))
     {
-                    Serial.print("Erzeuge MCP: ");
-            Serial.println(0x20+mcps, HEX);
-
-            if (!mcp[mcps].begin_I2C(0x20+mcps))
-            {
-                Serial.print("Error beim inistialisieren vom MCP mit der Adresse: ");
-                Serial.println(MCP1ADDR);
-                while (1)
-                    ;
-            }
-        
-    }
-}
-bool MCP::initMCP(const unsigned int MCPADR)
-{
-    Serial.print("Initialisiere MCP ");
-
-    Serial.println(MCPADR, HEX);
-    if (!mcp23017.begin_I2C(MCPADR))
-    {
-        //if (!mcp.begin_SPI(CS_PIN)) {
-        Serial.print("Error beim inistialisieren vom MCP mit der Adresse: ");
-        Serial.println(MCPADR);
+        Serial.print("Error beim inistialisieren vom MCP ");
+        Serial.print(getName());
+        Serial.print(" mit der Adresse: ");
+        Serial.println(adresse, HEX);
         while (1)
-            return false;
+            ;
     }
-    return true;
 }
+
+void MCP::setName(String name)
+{
+    this->name = name;
+}
+
+String MCP::getName() const
+{
+    return name;
+}
+
+void MCP::setAdresse(int adresse)
+{
+    this->adresse = adresse;
+}
+
+int MCP::getAdresse() const
+{
+    return adresse;
+}
+
+
 /*
 void MCP::setPinMode(const unsigned int GPIO, const unsigned int richtung)
 {
