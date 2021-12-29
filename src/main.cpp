@@ -6,7 +6,9 @@
 #include <Adafruit_MCP23X17.h>
 #include <MCPPin.h>
 #include <Weiche.h>
+#include <WeichenTaster.h>
 #include <interrupt.h>
+#include <MCPPin.h>
 /*
 //                                      /--LED19----------------------LED22---\
 //                                     /   S5RS5G                              \
@@ -15,11 +17,11 @@
 //                              TW6 /---LED18--------------------------LED23------\
 //                                 /    S4GS4G                                     \
 //                               LED20                                              LED24
-//        TW1           TW2      /                                                   \ 
+//        TW1           TW2      /                                                   \
 //--LED1---\----LED2----/-LED3--/----LED17-----------------------------LED25---------------LED26----/-----LED27----------
 //          \          /       TW5  S3RS3G                                                         /
 //           LED4     LED5                                                                        LED28
-//            \      /     TW3                                                                   / 
+//            \      /     TW3                                                                   /
 //--LED6-------\LED7/---LED8\--------LED16--------------------------------LED29 ---------/------/--------------LED30------
 //        S1GS1R             \                                                          /
 //                           LED10                                                     LED31
@@ -33,143 +35,21 @@
 //                                                 \--LED13------------LED36---/-LED37---/----LED39---------
 //
 */
-//Definiere die Ports für MCP0x20 PORTA und PORTB für Adafruit MCP23017
-#define MCP0X20GPA0 0
-#define MCP0X20GPA1 1
-#define MCP0X20GPA2 2
-#define MCP0X20GPA3 3
-#define MCP0X20GPA4 4
-#define MCP0X20GPA5 5
-#define MCP0X20GPA6 6
-#define MCP0X20GPA7 7
-
-#define MCP0X20GPB0 8
-#define MCP0X20GPB1 9
-#define MCP0X20GPB2 10
-#define MCP0X20GPB3 11
-#define MCP0X20GPB4 12
-#define MCP0X20GPB5 13
-#define MCP0X20GPB6 14
-#define MCP0X20GPB7 15
-
-//Definiere die Ports für MCP0x21 PORTA und PORTB für Adafruit MCP23017
-#define MCP0X21GPA0 0
-#define MCP0X21GPA1 1
-#define MCP0X21GPA2 2
-#define MCP0X21GPA3 3
-#define MCP0X21GPA4 4 //Signal 1
-#define MCP0X21GPA5 5 //Signal 1
-#define MCP0X21GPA6 6 //Signal 2
-#define MCP0X21GPA7 7 //Signal 2
-
-#define MCP0X21GPB0 8  //Signal 3
-#define MCP0X21GPB1 9  //Signal 3
-#define MCP0X21GPB2 10 //Signal 4
-#define MCP0X21GPB3 11 //Signal 4
-#define MCP0X21GPB4 12 //Signal 5
-#define MCP0X21GPB5 13 //Signal 5
-#define MCP0X21GPB6 14 //Signal 6
-#define MCP0X21GPB7 15 //Signal 6
-
-//MCP 0 GPIOA 0 -7 -> LED1 - LED7
-#define LED1 MCP0X20GPA0 // MCP 0 GPIOA0
-#define LED2 MCP0X20GPA1 // MCP 0 GPIOA1
-#define LED3 MCP0X20GPA2 // MCP 0 GPIOA2
-#define LED4 MCP0X20GPA3 // MCP 0 GPIOA3
-#define LED5 MCP0X20GPA4 // MCP 0 GPIOA4
-#define LED6 MCP0X20GPA5 // MCP 0 GPIOA5
-#define LED7 MCP0X20GPA6 // MCP 0 GPIOA6
-#define LED8 MCP0X20GPA7 // MCP 0 GPIOA7
-
-//MCP 0 GPIOB 0 -7 -> LED8 -LED16
-#define LED9 MCP0X20GPB0  // MCP 0 GPIOB0
-#define LED10 MCP0X20GPB1 // MCP 0 GPIOB1
-#define LED11 MCP0X20GPB2 // MCP 0 GPIOB2
-#define LED12 MCP0X20GPB3 // MCP 0 GPIOB3
-#define LED13 MCP0X20GPB4 // MCP 0 GPIOB4
-#define LED14 MCP0X20GPB5 // MCP 0 GPIOB5
-#define LED15 MCP0X20GPB6 // MCP 0 GPIOB6
-#define LED16 MCP0X20GPB7 // MCP 0 GPIOB7
-
-//MCP 1 GPIOA 0 -4 -> LED17 - LED 21
-#define LED17 MCP0X21GPA0 // MCP 1 GPIOA0
-#define LED18 MCP0X21GPA1 // MCP 1 GPIOA1
-#define LED19 MCP0X21GPA2 // MCP 1 GPIOA2
-#define LED20 MCP0X21GPA3 // MCP 1 GPIOA3
-// MCP 1 GPIOA 5 -7 -> Signale 1 - 2
-#define SIGNALROT1 MCP0X21GPA4   // Signal 1 Rot   MCP 1 GPIOA4
-#define SIGNALGRUEN1 MCP0X21GPA5 // Signal 1 Gruen MCP 1 GPIOA5
-#define SIGNALROT2 MCP0X21GPA6   // Signal 2 Rot   MCP 1 GPIOA6
-#define SIGNALGRUEN2 MCP0X21GPA7 // Signal 2 Gruen MCP 1 GPIOA7
-
-// MCP 1 GPIOB 0 - 7 -> Signale 2 - 7
-#define SIGNALROT3 MCP0X21GPB0   // Signal 3 Rot   MCP 1 GPIOB0
-#define SIGNALGRUEN3 MCP0X21GPB1 // Signal 3 Gruen MCP 1 GPIOB1
-#define SIGNALROT4 MCP0X21GPB2   // Signal 4 Rot   MCP 1 GPIOB2
-#define SIGNALGRUEN4 MCP0X21GPB3 // Signal 4 Gruen MCP 1 GPIOB3
-#define SIGNALROT5 MCP0X21GPB4   // Signal 5 Rot   MCP 1 GPIOB4
-#define SIGNALGRUEN5 MCP0X21GPB5 // Signal 5 Gruen MCP 1 GPIOB5
-#define SIGNALROT6 MCP0X21GPB6   // Signal 6 Rot   MCP 1 GPIOB6
-#define SIGNALGRUEN6 MCP0X21GPB7 // Signal 6 Gruen MCP 1 GPIOB7
-// MCP 2 GPIOA 0 - 2 -> Signal 6 - 7
-#define SIGNALROT7 1   // Signal 7 Rot   MCP 2 GPIOA1
-#define SIGNALGRUEN7 2 // Signal 7 Gruen MCP 2 GPIOA2
-
-//MCP 2 GPIOA 3-7 -> LED 22 - 25
-#define LED22 3 // MCP 2 GPIOA3
-#define LED23 4 // MCP 2 GPIOA4
-#define LED24 5 // MCP 2 GPIOA5
-#define LED25 6 // MCP 2 GPIOA6
-#define LED26 7 // MCP 2 GPIOA7
-//MCP 2 GPIOB 0 - 7 -> LED 25 - LED XX
-#define LED27 8  // MCP 2 GPIOB0
-#define LED28 9  // MCP 2 GPIOB1
-#define LED29 10 // MCP 2 GPIOB2
-#define LED30 11 // MCP 2 GPIOB3
-#define LED31 12 // MCP 2 GPIOB4
-#define LED32 13 // MCP 2 GPIOB5
-#define LED33 14 // MCP 2 GPIOB6
-#define LED34 15 // MCP 2 GPIOB7
-
-#define SIGNALROT8 0     // Signal 8 Rot   MCP 3 GPIOA0
-#define SIGNALGRUEN8 1   // Signal 8 Gruen MCP 3 GPIOA1
-#define SIGNALROT9 2     // Signal 9 Rot   MCP 3 GPIOA2
-#define SIGNALGRUEN9 3   // Signal 9 Gruen MCP 3 GPIOA3
-#define SIGNALROT10 4    // Signal 10 Rot   MCP 3 GPIOA4
-#define SIGNALGRUEN10 5  // Signal 10 Gruen MCP 3 GPIOA5
-#define SIGNALROT11 6    // Signal 11 Rot   MCP 3 GPIOA6
-#define SIGNALGRUEN11 7  // Signal 11 Gruen MCP 3 GPIOA7
-#define SIGNALROT12 8    // Signal 12 Rot   MCP 3 GPIOB0
-#define SIGNALGRUEN12 9  // Signal 12 Gruen MCP 3 GPIOB1
-#define SIGNALROT13 10   // Signal 13 Rot   MCP 3 GPIOB2
-#define SIGNALGRUEN13 11 // Signal 13 Gruen MCP 3 GPIOB3
-#define SIGNALROT14 12   // Signal 14 Rot   MCP 3 GPIOB4
-#define SIGNALGRUEN14 13 // Signal 14 Gruen MCP 3 GPIOB5
-#define SIGNALROT15 14   // Signal 15 Rot   MCP 3 GPIOB6
-#define SIGNALGRUEN15 15 // Signal 15 Gruen MCP 3 GPIOB7
-#define SIGNALROT16 0    // Signal 16 Rot   MCP 4 GPIOA0
-#define SIGNALGRUEN16 0  // Signal 16 Gruen MCP 4 GPIOA1
 
 // Anzahl der GPIO der MCP23017
 #define MAXGPIO 16
 
-#ifdef __DEBUG__
-#define __DEBUG__
 bool DEBUG = true;
-#endif
 
-#ifdef __MAXMCP__
-#define __MAXMCP__
 #define MAXMCP 8
-#endif
 
 // Variablen die das Stellpult beschreiben
-#define NUMBERWEICHEN 17 //Anzahl der Weichen im Stellpult
+#define NUMBERWEICHEN 17 // Anzahl der Weichen im Stellpult
 #define NUMBERSIGNALE 16 // Anzahl der Signale im Stellpult
 
 /*
 //Interupts Pins auf dem Arduino Mega 2560 sind
-//2, 3, 18, 19, 20, 21 
+//2, 3, 18, 19, 20, 21
 // (pins 20 & 21 are not available to use for interrupts while they are used for I2C communication)
 */
 // Definiere die Interupt Pins für die Eingabe MCP23017
@@ -178,66 +58,59 @@ bool DEBUG = true;
 #define INT_PIN_TAST_MCP1 3      // Pin 3 muss mit dem MCP INTA mit dem TAST_MCP1 verbunden werden
 #define INT_PIN_TAST_MCP2 18     // Pin 18 muss mit dem MCP INTA mit dem TAST_MCP2 verbunden werden
 #define INT_PIN_LED_TAST_MCP0 19 // Pin 19 muss mit dem MCP INTA mit dem LED_TAST_MCP0 verbunden werden
-
+bool awakenByInterrupt1;
 // Methoden bekannt geben
 void mcpauswerten();
 void handleInterrupt();
 void intCallBack();
+#define MAXPIN 128
+#define MAXWT 17
+#define MAXW 17
+Adafruit_MCP23X17 *mcp = new Adafruit_MCP23X17();
+MCPPin *mcppin[MAXPIN];
 
-//für jede Weiche im Stellpult ein Objekt anlegen
-Weiche weiche[NUMBERWEICHEN];
+// für jede Weiche im Stellpult ein Objekt anlegen
+Weiche *weiche[MAXW];
+WeichenTaster *weichenTaster[MAXWT];
 byte ledPin = 13;
 static uint16_t ledState = 0;
 
-//Stellpult *stellpult = new Stellpult();
+// Stellpult *stellpult = new Stellpult();
 void setup()
 {
 
+  for (int i = 0; i < MAXW; i++)
+  {
+    *weiche[i] = Weiche();
+  }
+  for (int i = 0; i < 128; i++)
+  {
+    *mcppin[i] = MCPPin(*mcp, 0x20, 0);
+  }
+  for (int i = 0; i < MAXWT; i++)
+  {
+    *weichenTaster[i] = WeichenTaster(*mcppin[0]);
+    weichenTaster[i]->addWeiche(*weiche[i]);
+  }
+
   Serial.begin(9600);
 
-  Serial.print(digitalPinToInterrupt(INT_PIN_TAST_MCP0));
-
   pinMode(ledPin, OUTPUT);
-  //Interupt Pins des Arduino setzen
+  // Interupt Pins des Arduino setzen
   pinMode(2, INPUT_PULLUP);
   pinMode(3, INPUT_PULLUP);
   // pinMode(INT_PIN_TAST_MCP2, INPUT_PULLUP);
-  //pinMode(INT_PIN_LED_TAST_MCP0, INPUT_PULLUP);
+  // pinMode(INT_PIN_LED_TAST_MCP0, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(2), intCallBack, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(2), intCallBack1, CHANGE);
   attachInterrupt(digitalPinToInterrupt(3), intCallBack, CHANGE);
-  //attachInterrupt(digitalPinToInterrupt(INT_PIN_TAST_MCP2), intCallBack, CHANGE);
-  //attachInterrupt(digitalPinToInterrupt(INT_PIN_LED_TAST_MCP0), intCallBack, CHANGE);
-  Serial.println("Erzeuge 17 Weichen"); //17 Weichen im Hauptbahnhof
+  // attachInterrupt(digitalPinToInterrupt(INT_PIN_TAST_MCP2), intCallBack, CHANGE);
+  // attachInterrupt(digitalPinToInterrupt(INT_PIN_LED_TAST_MCP0), intCallBack, CHANGE);
+  Serial.println("Erzeuge 17 Weichen"); // 17 Weichen im Hauptbahnhof
   // Erzeuge Zustände für Weichen
-  //Alle Weichen sollen im Zustand gerade beginnen. false bedeutet gerade
-  for (int i; i <= NUMBERWEICHEN; i++)
-  {
-    weiche[i] = Weiche(i, false);
-  }
-
-  Serial.println("Erzeuge MCPs: ");
-  Serial.print("PINNAME: ");
-  Serial.print(MCPPin::getPinName(3200));
+  // Alle Weichen sollen im Zustand gerade beginnen. false bedeutet gerade
 
   digitalWrite(ledPin, LOW);
-  weiche[0].setTaster();           // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[1].setTaster(*mcp[4], 2); // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[2].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[3].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[4].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[5].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[6].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[7].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[8].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[9].setTaster(0x24, 1);    // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[10].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[11].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[12].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[13].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[14].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[15].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
-  weiche[16].setTaster(0x24, 1);   // Füge Taste MCP 0x20 GPIOA1 zu Weiche 0 hinzu
 
   Serial.println("Looping...");
 }
@@ -255,8 +128,9 @@ void loop()
 
 
   }*/
-  if (awakenByInterrupt)
+  if (awakenByInterrupt1)
   {
+    Serial.println(weichenTaster1->isPressed());
 
     handleInterrupt();
   }
@@ -280,11 +154,11 @@ for (int i=0; i<NUMBERWEICHEN;i++)
   Serial.print(weiche[i].getRichtungText());
 
   Serial.println("");
-  
+
 }
     delay(1000);
 */
-//Serial.println("Auswerten");
+// Serial.println("Auswerten");
 
 /*
   delay(550);
@@ -365,7 +239,7 @@ void mcpauswerten()
     //--LED6-------\LED7/---LED8
 
     Serial.println("Weiche 1und 2 gerade");
-    mcp[0]->digitalWrite(LED1, HIGH); //Ausfahrgleis
+    mcp[0]->digitalWrite(LED1, HIGH); // Ausfahrgleis
     mcp[0]->digitalWrite(LED2, HIGH);
     mcp[0]->digitalWrite(LED3, HIGH);
     mcp[0]->digitalWrite(LED4, LOW);
@@ -373,7 +247,7 @@ void mcpauswerten()
     mcp[0]->digitalWrite(LED7, HIGH);
     mcp[0]->digitalWrite(LED8, HIGH);
     mcp[0]->digitalWrite(LED6, HIGH); // Einfahrgleis
-    //Signal Einfahrgleis ROT
+    // Signal Einfahrgleis ROT
     mcp[1]->digitalWrite(SIGNALROT1, HIGH);
     mcp[1]->digitalWrite(SIGNALROT2, LOW);
   }
@@ -387,7 +261,7 @@ void mcpauswerten()
     mcp[0]->digitalWrite(LED6, LOW);
     mcp[0]->digitalWrite(LED7, HIGH);
     mcp[0]->digitalWrite(LED8, LOW);
-    //Signal Einfahrgleis ROT
+    // Signal Einfahrgleis ROT
     mcp[1]->digitalWrite(SIGNALROT1, HIGH);
     mcp[1]->digitalWrite(SIGNALGRUEN1, LOW);
   }
@@ -431,10 +305,10 @@ void mcpauswerten()
     }
   }
   // Ende Weiche 3
-  //Weiche 4
+  // Weiche 4
   if (!weiche[3].getRichtung()) // Weiche 4 ist gerade
   {
-    if (weiche[2].getRichtung()) //Weiche 3 ist abzweig dann weg nach 3 an
+    if (weiche[2].getRichtung()) // Weiche 3 ist abzweig dann weg nach 3 an
     {
       mcp[0]->digitalWrite(LED10, HIGH);
     }
@@ -450,7 +324,7 @@ void mcpauswerten()
     mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
 
-  //Weiche 4
+  // Weiche 4
   if (weiche[3].getRichtung()) // Weiche 4 ist abzweig
   {
     if (weiche[2].getRichtung()) // Weiche 3 ist abzweig dann weg nach weiche 3 an
@@ -464,12 +338,12 @@ void mcpauswerten()
     mcp[0]->digitalWrite(LED9, LOW);
     mcp[0]->digitalWrite(LED11, HIGH);
 
-    //Signal Abstellgleis ROT
+    // Signal Abstellgleis ROT
     mcp[1]->digitalWrite(SIGNALROT2, HIGH);
     mcp[1]->digitalWrite(SIGNALGRUEN2, LOW);
   }
-  //ENDE Weiche 4
-  // Weiche 5
+  // ENDE Weiche 4
+  //  Weiche 5
   if (weiche[4].getRichtung()) // TRUE Weiche 5 ist abzweig
 
   {
