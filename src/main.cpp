@@ -46,7 +46,7 @@ bool DEBUG = true;
 // Variablen die das Stellpult beschreiben
 #define NUMBERWEICHEN 17 // Anzahl der Weichen im Stellpult
 #define NUMBERSIGNALE 16 // Anzahl der Signale im Stellpult
-
+#define MAXPIN 128
 /*
 //Interupts Pins auf dem Arduino Mega 2560 sind
 //2, 3, 18, 19, 20, 21
@@ -63,15 +63,13 @@ bool awakenByInterrupt1;
 void mcpauswerten();
 void handleInterrupt();
 void intCallBack();
-#define MAXPIN 128
-#define MAXWT 17
-#define MAXW 17
+
 Adafruit_MCP23X17 *mcp = new Adafruit_MCP23X17();
 MCPPin *mcppin[MAXPIN];
 
 // für jede Weiche im Stellpult ein Objekt anlegen
-Weiche *weiche[MAXW];
-WeichenTaster *weichenTaster[MAXWT];
+Weiche *weiche[NUMBERWEICHEN];
+WeichenTaster *weichenTaster[NUMBERWEICHEN];
 byte ledPin = 13;
 static uint16_t ledState = 0;
 
@@ -79,15 +77,15 @@ static uint16_t ledState = 0;
 void setup()
 {
 
-  for (int i = 0; i < MAXW; i++)
+  for (int i = 0; i < NUMBERWEICHEN; i++)
   {
     *weiche[i] = Weiche();
   }
-  for (int i = 0; i < 128; i++)
+  for (int i = 0; i < MAXPIN; i++)
   {
     *mcppin[i] = MCPPin(*mcp, 0x20, 0);
   }
-  for (int i = 0; i < MAXWT; i++)
+  for (int i = 0; i < NUMBERWEICHEN; i++)
   {
     *weichenTaster[i] = WeichenTaster(*mcppin[0]);
     weichenTaster[i]->addWeiche(*weiche[i]);

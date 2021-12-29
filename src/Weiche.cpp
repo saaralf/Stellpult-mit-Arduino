@@ -6,10 +6,9 @@ Weiche::Weiche()
     setRichtung(false);
 }
 
-Weiche::Weiche(const int Name, const bool richtung)
+Weiche::Weiche( const bool richtung)
 {
     Weiche();
-    setName(Name);
     setRichtung(richtung);
 }
 Weiche::~Weiche() {}
@@ -35,25 +34,4 @@ bool Weiche::getRichtung() const
 {
 
     return richtung;
-}
-void Weiche::setName(int neuername)
-{
-    this->name = neuername;
-}
-int Weiche::getName() const
-{
-    return name;
-}
-void Weiche::setTaster(const Adafruit_MCP23X17 *mcp, const unsigned int gpiopin)
-{
-    *mcp_device = *mcp;
-    gpio_pin = gpiopin;
-}
-Adafruit_MCP23X17 Weiche::getTasterMCP() const
-{
-    return *mcp_device;
-}
-unsigned int Weiche::getTasterMCPpin() const
-{
-    return gpio_pin;
 }
