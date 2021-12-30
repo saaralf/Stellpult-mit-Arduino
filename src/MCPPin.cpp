@@ -3,12 +3,13 @@
 MCPPin::MCPPin(const Adafruit_MCP23X17 &arg_mcp, int arg_mcpadresse, int arg_pinnummer)
 {
     mcp = arg_mcp;
-    pinnummer = arg_mcpadresse*100 + arg_pinnummer;
+    pinnummer = arg_mcpadresse * 100 + arg_pinnummer;
 }
 
-char MCPPin::getPinName(int pin)
+MCPPin::~MCPPin()
 {
-    return mcppinname[pin];
+
+    delete &mcp;
 }
 
 void MCPPin::setupInterrupts(bool mirroring, bool openDrain, uint8_t polarity)
@@ -23,7 +24,8 @@ void MCPPin::setPinMode(int pinmode)
     // Alle Pins an LED MCP auf OUTPUT
     mcp.pinMode(pinnummer, pinmode);
 }
-int MCPPin::getLastInterruptPin(){
+int MCPPin::getLastInterruptPin()
+{
 
     return mcp.getLastInterruptPin();
 }
