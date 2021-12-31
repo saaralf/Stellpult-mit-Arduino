@@ -1,15 +1,16 @@
 {
   "C_Cpp_Runner.cCompilerPath": "/home/michael/.platformio/packages/toolchain-atmelavr/bin/avr-gcc",
   "C_Cpp_Runner.debuggerPath": "/bin/gdb",
-  "C_Cpp_Runner.warnings": [
-    "-Wall",
-    "-Wextra",
-    "-Wpedantic"
+  "C_Cpp_Runner.warnings": [],
+  "C_Cpp_Runner.compilerArgs": [
+    "-mmcu=atmega2560",
+    ""
   ],
-  "C_Cpp_Runner.compilerArgs": [],
   "C_Cpp_Runner.includePaths": [
     "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/include",
     "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/IoAbstraction/src",
+    "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/TaskManagerIO/src",
     "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/Ethernet/src",
     "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/PubSubClient/src",
     "/home/michael/Documents/PlatformIO/Projects/Stellpult-mit-Arduino/.pio/libdeps/megaatmega2560/Adafruit MCP23017 Arduino Library/src",
@@ -21,6 +22,7 @@
     "/home/michael/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
     "/home/michael/.platformio/packages/framework-arduino-avr/libraries/HID/src",
     "/home/michael/.platformio/packages/framework-arduino-avr/libraries/SoftwareSerial/src",
+    "/home/michael/.platformio/packages/tool-unity",
     ""
   ],
   "C_Cpp_Runner.linkerArgs": [],

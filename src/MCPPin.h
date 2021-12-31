@@ -1,33 +1,33 @@
 #include <Adafruit_MCP23X17.h>
 
-
-
 class MCPPin
 {
 
 private:
-    int mcp_adresses[8] = {0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27};
-  
-   
-   
-public:
-    Adafruit_MCP23X17 mcp ;
-    int pinadresse;
-    int pinnummer;
-    int pinstatus = LOW;
-    int pinname = pinnummer;
-    int pinmode=OUTPUT;
+    Adafruit_MCP23X17 mcp; //Benötigt eine Referenze auf einen MCP
+    bool DEBUG = false;
 
+public:
+    int pinAdresse;            // Hat eine Adresse
+    int pinNummer;             // Hat einen Pinnummer 1- 128 besteht aus Adresse * 100 + Pin 0 - 15
+    int pinStatus = LOW;       // LOW oder HIGH
+    int PinDirection = OUTPUT; // INPUT oder OUTPUT
+
+    MCPPin(const Adafruit_MCP23X17 &mcp, int mcpadresse, int pinnummer,int PinDirection);
     MCPPin(const Adafruit_MCP23X17 &mcp, int mcpadresse, int pinnummer);
 
     ~MCPPin();
     void setAdresse(int MCPAdresse);
-    void setPinNummer(int pinnummer);
+    int getAdresse();
+    void setPinDirection(int PinDirection);
+    int getPinDirection();
 
-    int readMCPPin(int pinnummer);
-    void writeMCPPin(int pinnummer, int value);
-    void setPinMode(int pinmode);
-    static char getPinName(int pin);
+    void setPinNummer(int pinnummer);
+    int getPinNummer();
+    int readMCPPin();
+    void writeMCPPin(int value);
+    bool isINPUT();
+
     void setupInterrupts(bool mirroring, bool openDrain, uint8_t polarity);
     int getLastInterruptPin();
 };
