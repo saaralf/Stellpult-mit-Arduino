@@ -30,7 +30,7 @@ void setup()
   mcp1[3] = new Adafruit_MCP23X17();
   if (!mcp1[0]->begin_I2C(0x20))
   {
-    Serial.println("Fehler");
+    Serial.println("Fehler bei 0x20");
   }
 
   if (!mcp1[1]->begin_I2C(0x21))
@@ -38,22 +38,32 @@ void setup()
     Serial.println("Fehler");
   }
 
+
   if (!mcp1[2]->begin_I2C(0x24))
   {
     Serial.println("Fehler 0x24");
   }
-  //if (!mcp1[3]->begin_I2C(0x25))
-  //  {
-  //  Serial.println("Fehler 0x25");
-  // }
+ 
+  if (!mcp1[3]->begin_I2C(0x25))
+   {
+    Serial.println("Fehler 0x25");
+   }
 
-  for (int i = 0; i < 15; i++)
+  for (int i = 0; i < 16; i++)
   {
     mcppin[i] = new MCPPin(*mcp1[0], 0x20, i);
   }
-  for (int i = 15; i < 32; i++)
+  for (int i = 16; i < 32; i++)
   {
     mcppin[i] = new MCPPin(*mcp1[1], 0x21, i);
+  }
+   for (int i = 32; i < 48; i++)
+  {
+    mcppin[i] = new MCPPin(*mcp1[2], 0x24, i);
+  }
+   for (int i = 48; i < 64; i++)
+  {
+    mcppin[i] = new MCPPin(*mcp1[3], 0x25, i);
   }
   /*
 mcp1[2]->pinMode(0,INPUT);
@@ -73,11 +83,11 @@ mcp1[2]->pinMode(13,INPUT);
 mcp1[2]->pinMode(14,INPUT);
 mcp1[2]->pinMode(15,INPUT);
 mcp1[2]->pinMode(16,INPUT);
-*/
+
   for (int i = 32; i < 48; i++)
   {
     mcppin[i] = new MCPPin(*mcp1[2], 0x24, i, INPUT);
-  }
+  }*/
   /*
   mcppin[0] = new MCPPin(*mcp1[0], 0x21, 0);
   mcppin[1] = new MCPPin(*mcp1[0], 0x21, 1);
@@ -160,11 +170,37 @@ mcp1->digitalWrite(7,HIGH);
 
 void loop()
 {
-  if (mcppin[41]->readMCPPin())
+
+ Serial.println(sizeof(mcppin));
+
+ Serial.println(mcppin[8]->getPinName());
+  Serial.println (mcppin[8]->getAdresse(),HEX);
+  Serial.println (mcppin[8]->getPinNummer());
+  Serial.println (mcppin[8]->getPinDirection());
+  Serial.println("");
+    delay(250);
+ Serial.println(sizeof(mcppin));
+ Serial.println(mcppin[20]->getPinName());
+  Serial.println (mcppin[20]->getAdresse(),HEX);
+  Serial.println (mcppin[20]->getPinNummer());
+  Serial.println (mcppin[20]->getPinDirection());
+  Serial.println("");
+    delay(250);
+  Serial.println(sizeof(mcppin));
+  Serial.println(mcppin[32]->getPinName());
+  Serial.println (mcppin[32]->getAdresse(),HEX);
+  Serial.println (mcppin[32]->getPinNummer());
+  Serial.println (mcppin[32]->getPinDirection());
+  Serial.println("");
+    delay(250);
+
+  /*
+  if (mcppin[33]->readMCPPin())
   {
-    Serial.println(mcppin[41]->readMCPPin());
+    Serial.println(mcppin[33]->readMCPPin());
     delay(250);
   }
+  */
   // mcppin[0]->writeMCPPin(0,0);#
   for (int i = 0; i < 32; i++)
   {
