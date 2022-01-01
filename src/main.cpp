@@ -205,7 +205,7 @@ void loop()
   for (int i = 0; i < 32; i++)
   {
     //mcp.digitalWrite(i, HIGH);
-    mcppin[i]->writeMCPPin(HIGH);
+    mcppin[i]->digitalWrite(HIGH);
 
     digitalWrite(ledPin, HIGH);
   }
@@ -216,7 +216,7 @@ void loop()
     //mcp.digitalWrite(i, LOW);
     //mcp1->digitalWrite(i,LOW);
 
-    mcppin[i]->writeMCPPin(LOW);
+    mcppin[i]->digitalWrite(LOW);
 
     digitalWrite(ledPin, LOW);
   }
