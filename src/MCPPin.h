@@ -5,10 +5,8 @@ class MCPPin
 
 private:
     Adafruit_MCP23X17 mcp; // Benötigt eine Referenze auf einen MCP
-    bool DEBUG = true;
+    bool DEBUG = false;
     int internpinnummer; // Diese Nummer ist immer 0-15 und wird benötigt um mit dem MCP zu kommunizieren und errechnet sich aus der Pinnummer
-    void setInternPinNummer();
-    int getInternPinNummer();
 
 public:
     int pinAdresse;            // Hat eine Adresse
@@ -16,10 +14,10 @@ public:
     int pinStatus = LOW;       // LOW oder HIGH
     int PinDirection = OUTPUT; // INPUT oder OUTPUT
     String pinname = "";
-
-    MCPPin(const Adafruit_MCP23X17 &mcp, int mcpadresse, int pinnummer, int PinDirection);
+    void setInternPinNummer();
+    int getInternPinNummer();
     MCPPin(const Adafruit_MCP23X17 &mcp, int mcpadresse, int pinnummer);
-
+    MCPPin();
     ~MCPPin();
     void setAdresse(int MCPAdresse);
     int getAdresse();

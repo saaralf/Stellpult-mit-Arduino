@@ -1,0 +1,41 @@
+#include <Arduino.h>
+
+#include <Adafruit_MCP23X17.h>
+
+Adafruit_MCP23X17 mcp;
+
+//Stellpult *stellpult = new Stellpult();
+void setup()
+{
+
+  Serial.begin(9600);
+  if (!mcp.begin_I2C())
+    {
+    Serial.println("Fehler beim MCP");
+  }
+
+  for (int i = 0; i < 16; i++)
+  {
+    mcp.pinMode(i,OUTPUT);
+    delay(250);
+  }
+
+  Serial.println("Looping...");
+}
+
+void loop()
+{
+  for (int i = 0; i < 16; i++)
+  {
+    mcp.digitalWrite(i,HIGH);
+    delay(250);
+  }
+  delay(10);
+  //mcppin[0]->writeMCPPin(0,1);
+  for (int i = 0; i < 16; i++)
+  {
+    mcp.digitalWrite(i,LOW);
+    delay(250);
+  }
+  delay(10);
+}
