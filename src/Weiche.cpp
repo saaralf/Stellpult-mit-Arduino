@@ -1,5 +1,5 @@
 #include <Weiche.h>
-#include <Adafruit_MCP23X17.h>
+#include <MCP23017.h>
 
 Weiche::Weiche()
 {

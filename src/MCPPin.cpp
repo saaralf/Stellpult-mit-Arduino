@@ -1,42 +1,11 @@
 #include <MCPPin.h>
 MCPPin::MCPPin() {}
-MCPPin::MCPPin(const Adafruit_MCP23X17 &arg_mcp, int arg_mcpadresse, int arg_pinnummer)
+MCPPin::MCPPin(MCP23017 &arg_mcp, int arg_mcpadresse, int arg_pinnummer)
 {
-    if (DEBUG)
-    {
-        Serial.println("");
 
-        Serial.println("");
-        Serial.println("");
-
-        Serial.print("Setze MCPPIN: ");
-
-        Serial.print(arg_pinnummer);
-
-        Serial.print(" für MCP ");
-        Serial.print(arg_mcpadresse, HEX);
-    }
-    this->mcp = arg_mcp;
+    this->mcp = &arg_mcp;
     setAdresse(arg_mcpadresse);
     setPinNummer(arg_pinnummer);
-    this->setPinDirection(OUTPUT); // DEFAULT OUTPUT
-    setPinName();
-    Serial.print("PinName: ");
-    Serial.println(getPinName());
-    if (DEBUG)
-    {
-        Serial.print("MCP: ");
-        Serial.print(getAdresse(), HEX);
-        Serial.print(" , PIN Nummer: ");
-        Serial.print(getPinNummer());
-        Serial.print(" , PIN Nummer zusammengebaut: ");
-
-        Serial.print(pinNummer);
-
-        Serial.print(" mit Name ");
-        Serial.print(getPinName());
-        Serial.println(" angelegt!");
-    }
 }
 
 MCPPin::~MCPPin()
@@ -47,23 +16,10 @@ MCPPin::~MCPPin()
 
 void MCPPin::setInternPinNummer()
 {
-    if (DEBUG)
-    {
-        Serial.println("");
-
-        Serial.print("Set InternalPinNummer: ");
-        Serial.println(internpinnummer);
-        Serial.println("(this->pinnummer-getAdresse*100)%16");
-        Serial.print("(");
-        Serial.print(pinNummer);
-        Serial.print("-");
-        Serial.print(getAdresse());
-        Serial.print("*100)%16 : InternalpinNummer: = ");
-    }
 
     //(pinnummer - adresse * 100) % 16;
     internpinnummer = (pinNummer - getAdresse() * 100) % 16; // Sollte immer >0 <16 sein
-    Serial.println(internpinnummer);
+                                                             // Serial.println(internpinnummer);
 }
 
 int MCPPin::getInternPinNummer()
@@ -71,44 +27,39 @@ int MCPPin::getInternPinNummer()
     return internpinnummer;
 }
 
-void MCPPin::setupInterrupts(bool mirroring = true, bool openDrain = false, uint8_t polarity = HIGH)
-{
 
-    mcp.setupInterrupts(mirroring, openDrain, polarity);
-}
 
-int MCPPin::getLastInterruptPin()
-{
 
-    return mcp.getLastInterruptPin();
-}
-int MCPPin::readMCPPin()
-{
-    Serial.print("Status: ");
-    Serial.print(getPinNummer());
-    Serial.println(mcp.digitalRead(getInternPinNummer()));
-
-    return mcp.digitalRead(getInternPinNummer());
-}
 void MCPPin::digitalWrite(int value)
 {
-    Serial.print("Internummer: ");
-
-    Serial.print(getInternPinNummer());
-    Serial.print(" : Wert: ");
-
-    Serial.println(value);
-
-    this->mcp.digitalWrite(getInternPinNummer(), value);
-    if (DEBUG)
+    if (getInternPinNummer() < 8)
     {
-        Serial.print("MCP: ");
-        Serial.print(getAdresse(), HEX);
-        Serial.print(" , PIN Nummer: ");
-        Serial.print(getInternPinNummer());
-        Serial.print(" wird auf ");
-        Serial.print(value);
-        Serial.println(" geschaltet!");
+        if (DEBUG){
+        Serial.println("<8");
+        MCP_PORT port = B;
+        Serial.print(getPinName());
+        Serial.print(": Schreibe ");
+        Serial.print((value == 0) ? "LOW" : "HIGH");
+        Serial.print(" Port:  ");
+        Serial.print("B");
+        Serial.print(" Pin:  ");
+        Serial.println(getInternPinNummer());
+        }
+        mcp->setPin(getInternPinNummer(), B, value);
+    }
+    if (getInternPinNummer() > 7)
+    {
+        if (DEBUG){
+        MCP_PORT port = A;
+        Serial.print("Schreibe ");
+        Serial.print((value == 0) ? "LOW" : "HIGH");
+        Serial.print(" Port:  ");
+        Serial.print("A");
+
+        Serial.print(" Pin:  ");
+        Serial.println((getInternPinNummer() - 8));
+        }
+        mcp->setPin((getInternPinNummer() - 8), A, value);
     }
 }
 int MCPPin::getPinNummer()
@@ -127,30 +78,58 @@ int MCPPin::getAdresse()
 void MCPPin::setPinDirection(int PinDirection)
 {
     this->PinDirection = PinDirection;
-    this->mcp.pinMode(getInternPinNummer(), PinDirection); // DEFAULT OUTPUT
+    mcp->setPinMode((getInternPinNummer() < 8 ? getInternPinNummer() : (getInternPinNummer() - 8)), getPort(), PinDirection);
+    //this->mcp.pinMode(getInternPinNummer(), PinDirection); // DEFAULT OUTPUT
+   if (DEBUG){
+    Serial.print("MCPPin Name: ");
+    Serial.print(getPinName());
+    Serial.print(" MCPPin Nummer: ");
+    Serial.print(pinNummer);
+    Serial.print(" PinNummer: ");
+    Serial.print((getInternPinNummer() < 8 ? getInternPinNummer() : (getInternPinNummer() - 8)));
+    Serial.print(" Port: ");
+    Serial.print(getPort());
+    Serial.print(" Direction: ");
+    Serial.println((PinDirection == 0) ? "INPUT" : "OUTPUT");
+   }
 }
+
 int MCPPin::getPinDirection()
 {
     return PinDirection;
 }
-
+MCP_PORT MCPPin::getPort()
+{
+    return (getInternPinNummer() < 8) ? B : A;
+}
 bool MCPPin::isINPUT()
 {
     return getPinDirection() == INPUT;
 }
-String MCPPin::getPinName()
+
+String MCPPin::getPinDirectionName()
 {
-    return pinname;
+    if (getPinDirection() == 0)
+    {
+        return "INPUT";
+    }
+    if (getPinDirection() == 1)
+    {
+        return "OUTPUT";
+    }
+
+    return "Nicht definiert";
 }
-void MCPPin::setPinName()
+
+String MCPPin::getPinName()
 {
     if (getInternPinNummer() < 8)
     {
-        pinname = String(getAdresse(), HEX) + "->GPB" + String(getInternPinNummer(), DEC);
+        return String(getAdresse(), HEX) + "->GPB" + String(getInternPinNummer(), DEC) + "-> Direction: " + String(getPinDirectionName());
     }
     else
     {
-        pinname = String(getAdresse(), HEX) + "->GPA" + String((getInternPinNummer()) - 8, DEC);
+        return String(getAdresse(), HEX) + "->GPA" + String((getInternPinNummer()) - 8, DEC) + "-> Direction: " + String(getPinDirectionName());
     }
 }
 void MCPPin::setPinNummer(int arg_pinnummer)
@@ -158,3 +137,5 @@ void MCPPin::setPinNummer(int arg_pinnummer)
     pinNummer = getAdresse() * 100 + arg_pinnummer; // Adresse * 100 + Pinnummer (0-15)
     setInternPinNummer();
 }
+
+void MCPPin::readGPIOAB() {}
