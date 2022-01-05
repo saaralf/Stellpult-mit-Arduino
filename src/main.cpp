@@ -5,41 +5,83 @@
 #include <MCPPin.h>
 
 #define INT_PIN 2
-#define PINS 48
+#define PINS 64
 #define MCPS 4
 MCP23017 mcp[MCPS];
 void handleInterrupt();
 
 MCPPin *mcppin[PINS];
 
+// Variablen für die Interrupts definieren
+/*
+// Es gibt 5 Interrupt Pins am Mega2560 und diese werden an 3 MCPs angeschlossen
+// PIN 2 und 3 an MCP 1 (0x22) INT A und INT B
+// PIN 18 und 19 an MCP 2 (0x23) INT A und INT B
+// PIN X  an MCP X (0x27) INT A oder INT B, jenachdem welcher Port Input wird
+*/
 int interruptPin2 = 2;
 int interruptPin3 = 3;
+int interruptPin18 = 18;
+int interruptPin19 = 19;
 
-volatile bool event1;
+volatile bool intPin2EventMCP1A;
+volatile bool intPin3EventMCP1B;
 
-volatile bool event2;
-byte intCapRegA;
-byte intCapRegB;
+volatile bool intPin18EventA;
+volatile bool intPin18EventB;
 
-void eventHappened1()
+volatile bool intPin19EventA;
+volatile bool intPin19EventB;
+
+byte intPin2CapRegA;
+byte intPin2CapRegB;
+
+byte intPin3CapRegA;
+byte intPin3CapRegB;
+
+byte intPin18CapRegA;
+byte intPin18CapRegB;
+
+byte intPin19CapRegA;
+byte intPin19CapRegB;
+
+
+void ISRPIN2()
 {
-  if (!event1)
+ 
+    intPin2EventA = true;
+  
+}
+void ISRPIN3()
+{
+  intPin3EventB = true;
+}
+void ISRPIN18()
+{
+  if (!intPin18EventA)
   {
-    event1 = true;
+    intPin18EventA = true;
   }
 }
-void eventHappened2()
+void ISRPIN19()
 {
-  event2 = true;
+  intPin19EventB = true;
 }
+
 
 void setup()
 {
   pinMode(interruptPin2, INPUT);
-
   pinMode(interruptPin3, INPUT);
-  attachInterrupt(digitalPinToInterrupt(interruptPin2), eventHappened1, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(interruptPin3), eventHappened2, CHANGE);
+  pinMode(interruptPin18, INPUT);
+  pinMode(interruptPin19, INPUT);
+
+
+  attachInterrupt(digitalPinToInterrupt(interruptPin2), ISRINTPIN2A, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(interruptPin3), ISRINTPIN2B, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(interruptPin18), ISRINTPIN2A, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(interruptPin19), ISRINTPIN2B, CHANGE);
 
   Serial.begin(9600);
   delay(200);
@@ -65,8 +107,8 @@ void setup()
   // mcp[3].setInterruptPinPol(HIGH); // set INTA and INTB active-high
 
   //mcp[3].setInterruptOnChangePort(B11111111, A); //set all B pins as interrrupt Pins
-  event1 = false;
-  event2 = false;
+  intPin2EventA = false;
+  intPin2EventB = false;
 
   for (int i = 0; i < PINS; i++)
   {
@@ -79,19 +121,17 @@ void setup()
     {
       mcppin[i] = new MCPPin(mcp[1], 0x21, i < 24? B : A, i);// wenn i <24 Dann soll er GPB sein
       mcppin[i]->setPinDirection(OUTPUT); // Diese sind INPUT PINS
-    }                                     /*
+    }                                     
     if (i > 31 && i < 48)
     {
-      mcppin[i] = new MCPPin(mcp[2], 0x22, i);
+      mcppin[i] = new MCPPin(mcp[2], 0x22,i < 40? B : A, i);
       mcppin[i]->setPinDirection(INPUT); // Diese sind INPUT PINS
-      mcppin[i]->setupInterruptPin();
-    } /*
+    } 
    if (i > 47)
     {
-      mcppin[i] = new MCPPin(*mcp[3], 0x23, i);
+      mcppin[i] = new MCPPin(mcp[3], 0x23,i < 56? B : A, i);
       mcppin[i]->setPinDirection(INPUT); // Diese sind INPUT PINS
-      mcppin[i]->setupInterruptPin();
-    }*/
+    }
   }
 
   /*
@@ -120,11 +160,11 @@ void checkInterruptMPCX()
 void loop()
 {
 
-  intCapRegA = mcp[2].getIntCap(A); // ensures that existing interrupts are cleared
-  intCapRegB = mcp[2].getIntCap(B); // ensures that existing interrupts are cleared
-  if (event1)
+  intPin2CapRegA = mcp[2].getIntCap(A); // ensures that existing interrupts are cleared
+  intPin2CapRegB = mcp[2].getIntCap(B); // ensures that existing interrupts are cleared
+  if (intPin2EventA)
   {
-    event1 = false;
+    intPin2EventA = false;
 
     Serial.println("Interrupt! A");
 
@@ -132,23 +172,23 @@ void loop()
     byte intFlagRegA, eventPin;
     intFlagRegA = mcp[2].getIntFlag(A);
     eventPin = log(intFlagRegA) / log(2);
-    intCapRegA = mcp[2].getIntCap(A);
-    Serial.print(log(intFlagRegA > 0 ? intFlagRegA : intCapRegA > 0 ? intCapRegA
+    intPin2CapRegA = mcp[2].getIntCap(A);
+    Serial.print(log(intFlagRegA > 0 ? intFlagRegA : intPin2CapRegA > 0 ? intPin2CapRegA
                                                                     : -1) /
                  log(2));
-    eventPin = log(intFlagRegA > 0 ? intFlagRegA : intCapRegA > 0 ? intCapRegA
+    eventPin = log(intFlagRegA > 0 ? intFlagRegA : intPin2CapRegA > 0 ? intPin2CapRegA
                                                                   : 100000000) /
                log(2);
                int pinnummer = 0x20*1000+A*10+eventPin;
     Serial.print("Interrupt Flag Register: ");
     Serial.println(intFlagRegA, BIN);
     Serial.print("Interrupt Capture Register: ");
-    Serial.println(intCapRegA, BIN);
+    Serial.println(intPin2CapRegA, BIN);
     Serial.print("Pin No.");
   //  Serial.print(eventPin < 8 ? eventPin : -1);
     Serial.print(pinnummer);
     Serial.print(" went ");
-    if ((intFlagRegA & intCapRegA) == 0)
+    if ((intFlagRegA & intPin2CapRegA) == 0)
     { //LOW-HIGH or HIGH-LOW interrupt?
       Serial.println("LOW");
     }
@@ -158,11 +198,11 @@ void loop()
     }
     // mcp[2].setPort(intFlagRegA, A);
     delay(1000);
-    event1 = false;
+    intPin2EventA = false;
   }
-  if (event2)
+  if (intPin2EventB)
   {
-    event2 = false;
+    intPin2EventB = false;
 
     Serial.println("Interrupt! B");
 
@@ -170,15 +210,15 @@ void loop()
     byte intFlagRegB, eventPin;
     intFlagRegB = mcp[2].getIntFlag(B);
     eventPin = log(intFlagRegB) / log(2);
-    intCapRegB = mcp[2].getIntCap(B);
+    intPin2CapRegB = mcp[2].getIntCap(B);
     Serial.print("Interrupt Flag Register: ");
     Serial.println(intFlagRegB, BIN);
     Serial.print("Interrupt Capture Register: ");
-    Serial.println(intCapRegB, BIN);
+    Serial.println(intPin2CapRegB, BIN);
     Serial.print("Pin No.");
     Serial.print(eventPin);
     Serial.print(" went ");
-    if ((intFlagRegB & intCapRegB) == 0)
+    if ((intFlagRegB & intPin2CapRegB) == 0)
     { //LOW-HIGH or HIGH-LOW interrupt?
       Serial.println("LOW");
     }
@@ -188,7 +228,7 @@ void loop()
     }
     //  mcp[2].setPort(intFlagRegB, B);
     delay(1000);
-    event2 = false;
+    intPin2EventB = false;
   }
   /*
   if (event1)
