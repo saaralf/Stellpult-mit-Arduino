@@ -8,10 +8,19 @@ MCPPin::MCPPin(MCP23017 &arg_mcp, int arg_mcpadresse, MCP_PORT port, int arg_pin
     setAdresse(arg_mcpadresse);
     setPinNummer(arg_pinnummer);
 }
+MCPPin::MCPPin(MCP23017 &arg_mcp, int arg_mcpadresse, MCP_PORT port, int arg_pinnummer, int SXAddr, int SXBit)
+{
 
+    setPort(port);
+    this->mcp = &arg_mcp;
+    setAdresse(arg_mcpadresse);
+    setPinNummer(arg_pinnummer);
+    setSXAddresse(SXAddr);
+    setSXBit(SXBit);
+}
 MCPPin::MCPPin(MCP23017 &arg_mcp, int arg_mcpadresse, int arg_pinnummer)
 {
-    setPort(A); //Default, wenn nicht angegeben
+    setPort(A); // Default, wenn nicht angegeben
     this->mcp = &arg_mcp;
     setAdresse(arg_mcpadresse);
     setPinNummer(arg_pinnummer);
@@ -38,7 +47,33 @@ bool MCPPin::isPressed()
 
     return false;
 }
-
+int MCPPin::digitalRead()
+{
+    if (getInternPinNummer() < 8)
+    {
+        if (DEBUG)
+        {
+            Serial.println("<8");
+            Serial.print(getPinName());
+            Serial.print(": Lese Port:  ");
+            Serial.print("B");
+            Serial.print(" Pin:  ");
+            Serial.println(getInternPinNummer());
+        }
+        return mcp->getPin(getInternPinNummer(), B);
+    }
+    if (getInternPinNummer() > 7)
+    {
+        if (DEBUG)
+        {
+            Serial.print(": Lese Port:  ");
+            Serial.print("A");
+            Serial.print(" Pin:  ");
+            Serial.println((getInternPinNummer() - 8));
+        }
+        return mcp->getPin((getInternPinNummer() - 8), A);
+    }
+}
 void MCPPin::digitalWrite(int value)
 {
     if (getInternPinNummer() < 8)
@@ -88,7 +123,7 @@ void MCPPin::setPinDirection(int PinDirection)
 {
     this->PinDirection = PinDirection;
     mcp->setPinMode((getInternPinNummer() < 8 ? getInternPinNummer() : (getInternPinNummer() - 8)), getPort(), PinDirection);
-    //this->mcp.pinMode(getInternPinNummer(), PinDirection); // DEFAULT OUTPUT
+    // this->mcp.pinMode(getInternPinNummer(), PinDirection); // DEFAULT OUTPUT
     if (DEBUG)
     {
         Serial.print("MCPPin Name: ");
@@ -171,3 +206,20 @@ unsigned int MCPPin::getInternPinNummer()
     return internpinnummer;
 }
 void MCPPin::readGPIOAB() {}
+
+void MCPPin::setSXAddresse(int SXAddr)
+{
+    SXAddresse = SXAddr;
+}
+void MCPPin::setSXBit(int SXBit)
+{
+    SXBit = SXBit;
+}
+int MCPPin::getSXAddresse()
+{
+    return SXAddresse;
+}
+int MCPPin::getSXBit()
+{
+    return SXBit;
+}
