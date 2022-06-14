@@ -6,9 +6,12 @@
 
 #define INT_PIN 2
 #define PINS 64
-#define MCPS 4
+#define MCPS 2
 MCP23017 mcp[MCPS];
 void handleInterrupt();
+
+//Selectrixadressen die wir verfolgen
+int SXaddressen[7] = {70,71,72,73,74,81,82};
 
 unsigned berechnePinNummer(int mcpAdresse, MCP_PORT port, int pinnummer);
 

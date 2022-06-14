@@ -1,0 +1,41 @@
+
+-----------------------------------------------------------------               
+|Selectrix Adresse|SelectrixBit|Weiche/Signale|MCPAdresse|mcpPin|INPUT/OUTPUT|
+------------------------------------------------------------------------------               
+                70|1           |        Weiche|      0x20|    00|      OUTPUT|
+                70|2           |        Weiche|      0x20|    01|      OUTPUT|
+                70|3           |        Weiche|      0x20|    02|      OUTPUT|
+                70|4           |        Weiche|      0x20|    03|      OUTPUT|
+                70|5           |        Weiche|      0x20|    04|      OUTPUT|
+                70|6           |        Weiche|      0x20|    05|      OUTPUT|
+                70|7           |        Weiche|      0x20|    06|      OUTPUT|
+                70|8           |        Weiche|      0x20|    07|      OUTPUT|
+-----------------------------------------------------------------               
+                71|1           |        Weiche|      0x20|    08|      OUTPUT|
+                71|2           |        Weiche|      0x20|    09|      OUTPUT|
+                71|3           |        Weiche|      0x20|    10|      OUTPUT|
+                71|4           |        Weiche|      0x20|    11|      OUTPUT|
+                71|5           |        Weiche|      0x20|    12|      OUTPUT|
+                71|6           |        Weiche|      0x20|    13|      OUTPUT|
+                71|7           |        Weiche|      0x20|    14|      OUTPUT|
+                71|8           |        Weiche|      0x20|    15|      OUTPUT|
+-----------------------------------------------------------------               
+                72|1           |        Weiche|      0x21|    16|      OUTPUT|
+                72|2           |        Weiche|      0x21|    17|      OUTPUT|
+                72|3           |        Weiche|      0x21|    18|      OUTPUT|
+                72|4           |        Weiche|      0x21|    19|      OUTPUT|
+                72|5           |        Weiche|      0x21|    20|      OUTPUT|
+                72|6           |        Weiche|      0x21|    21|      OUTPUT|
+                72|7           |        Weiche|      0x21|    22|      OUTPUT|
+                72|8           |        Weiche|      0x21|    23|      OUTPUT|
+-----------------------------------------------------------------               
+                73|1           |        Weiche|      0x21|    24|      OUTPUT|
+                73|2           |        Weiche|      0x21|    25|      OUTPUT|
+                73|3           |        Weiche|      0x21|    26|      OUTPUT|
+                73|4           |        Weiche|      0x21|    27|      OUTPUT|
+                73|5           |        Weiche|      0x21|    28|      OUTPUT|
+                73|6           |        Weiche|      0x21|    29|      OUTPUT|
+                73|7           |        Weiche|      0x21|    30|      OUTPUT|
+                73|8           |        Weiche|      0x21|    31|      OUTPUT|
+-----------------------------------------------------------------               
+
