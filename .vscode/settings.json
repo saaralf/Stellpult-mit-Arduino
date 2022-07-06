@@ -36,5 +36,9 @@
   "C_Cpp_Runner.includeSearch": [
     "*",
     "**/*"
-  ]
+  ],
+  "files.associations": {
+    "deque": "cpp",
+    "list": "cpp"
+  }
 }
